@@ -8,7 +8,7 @@ import busIcon from "./assets/bus_icon.jpg";
 import scooterIcon from "./assets/scooter_icon.jpg";
 
 
-export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetailsClick }) {
+export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetailsClick, onHomeClick, onVehiclesClick }) {
   const vehicleTags = [
     { label: "Bike", icon: bikeIcon },
     { label: "Car", icon: carIcon },
@@ -107,9 +107,12 @@ export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetai
         </div>
 
         <nav className="navbar-menu" aria-label="Primary navigation">
-          <a href="#home">Home</a>
-          <a href="#vehicle-details" onClick={(e) => { e.preventDefault(); onViewDetailsClick(); }}>Vehicle Details</a>
-          <a href="#vehicles">Vehicles</a>
+          <button type="button" className="nav-link" onClick={onHomeClick}>
+            Home
+          </button>
+          <button type="button" className="nav-link" onClick={onVehiclesClick}>
+            Vehicles
+          </button>
           <a href="#how-it-works">How It Works</a>
           <a href="#offers">Offers</a>
           <a href="#about">About Us</a>
@@ -232,7 +235,9 @@ export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetai
               </div>
               <div className="vehicle-card-footer">
                 <span></span>
-                <button type="button" className="view-details-button">View Details</button>
+                <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
+                  View Details
+                </button>
               </div>
             </article>
           ))}
@@ -259,7 +264,9 @@ export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetai
               </div>
               <div className="vehicle-card-footer">
                 <span></span>
-                <button type="button" className="view-details-button">View Details</button>
+                <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
+                  View Details
+                </button>
               </div>
             </article>
           ))}

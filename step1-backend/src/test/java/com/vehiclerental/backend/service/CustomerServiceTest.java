@@ -43,5 +43,6 @@ class CustomerServiceTest {
 
         assertEquals("om@example.com", result.getEmail());
         assertEquals("9876543210", result.getPhone());
+        
     }
 }

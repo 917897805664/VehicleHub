@@ -3,63 +3,6 @@ import Sidebar from "./Sidebar";
 
 export default function CustomerDashboard({ onLogout, onViewDetails }) {
   const [active, setActive] = React.useState("dashboard");
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [showSearchForm, setShowSearchForm] = React.useState(false);
-  const [searchFilters, setSearchFilters] = React.useState({
-    name: "",
-    location: "",
-    city: "",
-    pincode: "",
-    area: "",
-  });
-  const searchPanelRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showSearchForm && searchPanelRef.current && !searchPanelRef.current.contains(event.target)) {
-        setShowSearchForm(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [showSearchForm]);
-
-
-  const handleSearchStart = () => {
-    if (!showSearchForm) {
-      setShowSearchForm(true);
-      return;
-    }
-
-    if (searchQuery.trim()) {
-      setShowSearchForm(true);
-    }
-  };
-
-  const handleSearchHover = () => {
-    setShowSearchForm(true);
-  };
-
-  const handleSearchMouseLeave = () => {
-    setShowSearchForm(false);
-  };
-
-  const handleSearchKeyDown = (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleSearchStart();
-    }
-  };
-
-  const handleFilterChange = (field, value) => {
-    setSearchFilters((prev) => ({ ...prev, [field]: value }));
-  };
 
   const dashboardOffers = [
     {
@@ -412,125 +355,12 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
     },
   ];
 
-  const SearchPanel = ({ fullWidth = true }) => (
-    <div style={fullWidth ? { ...styles.panel, gridColumn: "1 / -1" } : styles.panel}>
-      <div style={styles.panelHeader}>
-        <div>
-          <h2 style={styles.panelTitle}>Search Vehicles</h2>
-          <p style={styles.panelText}>Enter a keyword to open the advanced search form below.</p>
-        </div>
-      </div>
-      <div
-        ref={searchPanelRef}
-        style={styles.searchWrapper}
-        onMouseEnter={handleSearchHover}
-        onMouseLeave={handleSearchMouseLeave}
-      >
-        <div style={styles.searchRowSimple}>
-          <input
-            style={styles.searchInput}
-            placeholder="Search vehicles..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            onFocus={handleSearchHover}
-          />
-          <button
-            type="button"
-            style={styles.searchButton}
-            onClick={handleSearchStart}
-          >
-            Search
-          </button>
-        </div>
-
-        {showSearchForm && (
-          <div style={styles.advancedForm}>
-            <div style={styles.formHeader}>
-              <h3 style={styles.formTitle}>Refine your search</h3>
-              <p style={styles.formText}>Use one or more filters below to search by name, location, city, pincode, or area.</p>
-            </div>
-            <div style={styles.formGrid}>
-              <div style={styles.formField}>
-                <label style={styles.formLabel}>Vehicle Name</label>
-                <input
-                  style={styles.formInput}
-                  value={searchFilters.name}
-                  onChange={(e) => handleFilterChange("name", e.target.value)}
-                  placeholder="e.g. Honda Activa"
-                />
-              </div>
-              <div style={styles.formField}>
-                <label style={styles.formLabel}>Location</label>
-                <input
-                  style={styles.formInput}
-                  value={searchFilters.location}
-                  onChange={(e) => handleFilterChange("location", e.target.value)}
-                  placeholder="e.g. MG Road"
-                />
-              </div>
-              <div style={styles.formField}>
-                <label style={styles.formLabel}>City</label>
-                <input
-                  style={styles.formInput}
-                  value={searchFilters.city}
-                  onChange={(e) => handleFilterChange("city", e.target.value)}
-                  placeholder="e.g. Bangalore"
-                />
-              </div>
-              <div style={styles.formField}>
-                <label style={styles.formLabel}>Pincode</label>
-                <input
-                  style={styles.formInput}
-                  value={searchFilters.pincode}
-                  onChange={(e) => handleFilterChange("pincode", e.target.value)}
-                  placeholder="e.g. 560001"
-                />
-              </div>
-              <div style={styles.formField}>
-                <label style={styles.formLabel}>Area</label>
-                <input
-                  style={styles.formInput}
-                  value={searchFilters.area}
-                  onChange={(e) => handleFilterChange("area", e.target.value)}
-                  placeholder="e.g. Indiranagar"
-                />
-              </div>
-            </div>
-            <div style={styles.formActions}>
-              <button style={styles.searchButton} onClick={() => setShowSearchForm(true)}>
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div style={{ display: "flex" }}>
       <Sidebar active={active} onSelect={(k) => setActive(k)} />
       <div style={styles.page}>
-        <header style={styles.header}>
-          <div style={styles.brand}>
-            <div style={styles.logo}>VehicleHub</div>
-            <div style={styles.tagline}>Ride Anytime, Anywhere</div>
-          </div>
-          <div style={styles.userPanel}>
-            <div style={styles.userAvatar}>RK</div>
-            <div>
-              <div style={styles.userName}>Rahul Kumar</div>
-              <div style={styles.userRole}>Customer</div>
-            </div>
-            <button style={styles.logoutButton} onClick={onLogout}>Logout</button>
-          </div>
-        </header>
-
-
         <main style={styles.mainGrid}>
-              <SearchPanel />
-
           <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.statsSection }}>
             <div style={styles.statsRow}>
               {dashboardStats.map((item) => (
@@ -587,9 +417,6 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
                   <button type="button" style={styles.heartButton} aria-label="Like vehicle">
                     ❤
                   </button>
-                  <div style={styles.popularImageWrapper}>
-                    <img src={vehicle.imageUrl} alt={vehicle.name} style={styles.popularImage} />
-                  </div>
                   <div style={styles.popularCardContent}>
                     <h4 style={styles.popularCardTitle}>{vehicle.name}</h4>
                     <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
@@ -619,9 +446,6 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
                   <button type="button" style={styles.heartButton} aria-label="Like vehicle">
                     ❤
                   </button>
-                  <div style={styles.popularImageWrapper}>
-                    <img src={vehicle.imageUrl} alt={vehicle.name} style={styles.popularImage} />
-                  </div>
                   <div style={styles.popularCardContent}>
                     <h4 style={styles.popularCardTitle}>{vehicle.name}</h4>
                     <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
@@ -651,9 +475,6 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
                   <button type="button" style={styles.heartButton} aria-label="Like vehicle">
                     ❤
                   </button>
-                  <div style={styles.popularImageWrapper}>
-                    <img src={vehicle.imageUrl} alt={vehicle.name} style={styles.popularImage} />
-                  </div>
                   <div style={styles.popularCardContent}>
                     <h4 style={styles.popularCardTitle}>{vehicle.name}</h4>
                     <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
@@ -717,55 +538,6 @@ const styles = {
     marginLeft: 260,
     width: "calc(100% - 260px)",
     boxSizing: "border-box",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "24px",
-  },
-  brand: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  logo: {
-    fontSize: "28px",
-    fontWeight: 800,
-    color: "#0f7a34",
-  },
-  tagline: {
-    marginTop: "6px",
-    color: "#55606c",
-  },
-  userPanel: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  userAvatar: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "50%",
-    background: "#0f7a34",
-    color: "white",
-    display: "grid",
-    placeItems: "center",
-    fontWeight: 700,
-  },
-  userName: {
-    fontWeight: 700,
-  },
-  userRole: {
-    fontSize: "13px",
-    color: "#55606c",
-  },
-  logoutButton: {
-    marginLeft: "12px",
-    background: "#fff",
-    border: "1px solid #d4d7dd",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    cursor: "pointer",
   },
   statsSection: {
     marginTop: "20px",
@@ -852,95 +624,6 @@ const styles = {
     background: "#0f7a34",
     color: "white",
     cursor: "pointer",
-  },
-  searchTabs: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-    marginBottom: "18px",
-  },
-  tabButton: {
-    padding: "10px 14px",
-    borderRadius: "12px",
-    border: "1px solid #d5d9e4",
-    background: "#f7fafc",
-    cursor: "pointer",
-    color: "#55606c",
-  },
-  tabActive: {
-    background: "#e6f5ea",
-    borderColor: "#c8e6d8",
-    color: "#0f7a34",
-  },
-  searchRow: {
-    display: "grid",
-    gridTemplateColumns: "1.3fr 1fr 1fr",
-    gap: "14px",
-    marginBottom: "20px",
-  },
-  searchWrapper: {
-    display: "grid",
-    gap: "16px",
-  },
-  searchRowSimple: {
-    display: "grid",
-    gridTemplateColumns: "1fr auto",
-    gap: "14px",
-    marginTop: "16px",
-  },
-  advancedForm: {
-    marginTop: "22px",
-    padding: "22px",
-    background: "#f7fafc",
-    borderRadius: "20px",
-    border: "1px solid #e6edf3",
-    boxShadow: "0 10px 30px rgba(15, 122, 52, 0.06)",
-  },
-  formHeader: {
-    marginBottom: "18px",
-  },
-  formTitle: {
-    margin: 0,
-    fontSize: "18px",
-  },
-  formText: {
-    margin: "8px 0 0",
-    color: "#6f7c92",
-    fontSize: "14px",
-  },
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "16px",
-  },
-  formField: {
-    display: "grid",
-    gap: "8px",
-  },
-  formLabel: {
-    fontSize: "13px",
-    color: "#55606c",
-    fontWeight: 700,
-  },
-  formInput: {
-    width: "100%",
-    padding: "14px 16px",
-    borderRadius: "14px",
-    border: "1px solid #d8e3ed",
-    background: "white",
-    fontSize: "14px",
-  },
-  formActions: {
-    marginTop: "20px",
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-  searchInput: {
-    width: "100%",
-    padding: "16px",
-    borderRadius: "16px",
-    border: "1px solid #e3e8f0",
-    fontSize: "14px",
   },
   dashboardOfferSection: {
     marginTop: "24px",
@@ -1032,17 +715,6 @@ const styles = {
     placeItems: "center",
     zIndex: 1,
   },
-  popularImageWrapper: {
-    width: "100%",
-    minHeight: "170px",
-    overflow: "hidden",
-  },
-  popularImage: {
-    width: "100%",
-    height: "170px",
-    objectFit: "cover",
-    display: "block",
-  },
   popularCardContent: {
     padding: "0 20px 20px",
     display: "grid",
@@ -1084,15 +756,6 @@ const styles = {
   popularPrice: {
     fontWeight: 700,
     color: "#0f7a34",
-  },
-  searchButton: {
-    padding: "16px 24px",
-    borderRadius: "16px",
-    border: "none",
-    background: "#0f7a34",
-    color: "white",
-    fontWeight: 700,
-    cursor: "pointer",
   },
   vehicleTypes: {
     display: "grid",
@@ -1244,12 +907,6 @@ const styles = {
     border: "1px solid #edf2f7",
     background: "#f8fafc",
     alignItems: "center",
-  },
-  vehicleImage: {
-    width: "72px",
-    height: "56px",
-    background: "linear-gradient(135deg, #dff6e8 0%, #cfead8 100%)",
-    borderRadius: "14px",
   },
   vehicleInfo: {
     display: "grid",

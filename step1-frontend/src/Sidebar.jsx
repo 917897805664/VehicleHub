@@ -18,7 +18,7 @@ export default function Sidebar({ active = "dashboard", onSelect = () => {} }) {
   return (
     <aside style={styles.sidebar}>
       <div style={styles.topBrand}>
-        <div style={styles.logoBox}>VH</div>
+        <div style={styles.logoBox}>🚗</div>
         <div>
           <div style={styles.brandName}>VehicleHub</div>
           <div style={styles.brandTag}>Ride Anytime, Anywhere</div>

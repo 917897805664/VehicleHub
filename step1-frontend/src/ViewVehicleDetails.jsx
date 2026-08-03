@@ -1,8 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 import carImage from "./assets/car_image.jpg";
 
-export default function ViewVehicleDetails({ vehicle, onBack, onLoginClick, onRegisterClick }) {
+export default function ViewVehicleDetails({ vehicle, onBack, onLoginClick, onRegisterClick, onBookVehicle }) {
   const [showBookingNav, setShowBookingNav] = React.useState(false);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []);
 
   const mainVehicle = vehicle || {
     name: "Hyundai i20",
@@ -92,6 +96,11 @@ export default function ViewVehicleDetails({ vehicle, onBack, onLoginClick, onRe
   ];
 
   const handleBookNow = () => {
+    if (typeof onBookVehicle === "function") {
+      onBookVehicle();
+      return;
+    }
+
     setShowBookingNav(true);
   }; 
 
