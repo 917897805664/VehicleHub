@@ -1,9 +1,7 @@
 import React, { useEffect } from "react";
 import carImage from "./assets/car_image.jpg";
 
-export default function ViewVehicleDetails({ vehicle, onBack, onLoginClick, onRegisterClick, onBookVehicle }) {
-  const [showBookingNav, setShowBookingNav] = React.useState(false);
-
+export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle }) {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
@@ -98,52 +96,19 @@ export default function ViewVehicleDetails({ vehicle, onBack, onLoginClick, onRe
   const handleBookNow = () => {
     if (typeof onBookVehicle === "function") {
       onBookVehicle();
-      return;
     }
-
-    setShowBookingNav(true);
   }; 
 
   return (
     <div className="view-details-shell">
       <div className="view-details-main">
-        {showBookingNav ? (
-          <>
-            <header className="vehicle-details-navbar">
-              <div className="vehicle-details-brand">
-                <div className="vehicle-details-brand-icon" aria-hidden="true">
-                  🚗
-                </div>
-                <div>
-                  <div className="vehicle-details-brand-name">VehicleHub</div>
-                  <div className="vehicle-details-brand-tag">Safe, reliable, affordable rides</div>
-                </div>
-              </div>
-
-              <div className="vehicle-details-nav-actions">
-                <button type="button" className="vehicle-details-nav-btn vehicle-details-nav-outline" onClick={onLoginClick}>
-                  Login
-                </button>
-                <button type="button" className="vehicle-details-nav-btn vehicle-details-nav-primary" onClick={onRegisterClick}>
-                  Register
-                </button>
-              </div>
-            </header>
-            <div className="detail-topbar-left detail-topbar-left-inline">
-              <button type="button" className="detail-back-button" onClick={onBack}>
-                ← Back
-              </button>
-            </div>
-          </>
-        ) : (
-          <header className="detail-topbar">
-            <div className="detail-topbar-left">
-              <button type="button" className="detail-back-button" onClick={onBack}>
-                ← Back
-              </button>
-            </div>
-          </header>
-        )}
+        <header className="detail-topbar">
+          <div className="detail-topbar-left">
+            <button type="button" className="detail-back-button" onClick={onBack}>
+              ← Back
+            </button>
+          </div>
+        </header>
 
         <div className="detail-main-scroll">
           <div className="detail-main-grid">
@@ -305,7 +270,7 @@ export default function ViewVehicleDetails({ vehicle, onBack, onLoginClick, onRe
               </div>
 
               <div className="owner-detail-actions">
-                <button type="button" className="primary-button owner-action-btn">Chat with Owner</button>
+                <button type="button" className="primary-button owner-action-btn owner-chat-btn">Chat With Owner</button>
                 <button type="button" className="secondary-button owner-action-btn">View Profile</button>
               </div>
             </article>

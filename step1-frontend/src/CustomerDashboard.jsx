@@ -1,7 +1,10 @@
 import React from "react";
 import Sidebar from "./Sidebar";
-
-export default function CustomerDashboard({ onLogout, onViewDetails }) {
+import CustomerSidebarWishlist from "./CustomerSidebarWishlist";
+import carImage from "./assets/car_image.jpg";
+import profilePlaceholder from "./assets/profile_placeholder.svg";
+import "./index.css";
+export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
   const [active, setActive] = React.useState("dashboard");
 
   const dashboardOffers = [
@@ -57,6 +60,7 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
   ];
 
   const [offerIndex, setOfferIndex] = React.useState(0);
+  const [likedVehicleNames, setLikedVehicleNames] = React.useState([]);
 
   const handlePrevOffer = () => {
     setOfferIndex((prev) => (prev - 1 + dashboardOffers.length) % dashboardOffers.length);
@@ -64,6 +68,14 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
 
   const handleNextOffer = () => {
     setOfferIndex((prev) => (prev + 1) % dashboardOffers.length);
+  };
+
+  const handleToggleWishlist = (vehicle) => {
+    setLikedVehicleNames((prev) =>
+      prev.includes(vehicle.name)
+        ? prev.filter((name) => name !== vehicle.name)
+        : [...prev, vehicle.name]
+    );
   };
 
   const popularVehicles = [
@@ -181,92 +193,92 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
     },
   ];
 
-  const recentBookings = [
-    {
-      name: "Maruti Wagon R",
-      type: "Car",
-      description: "Booked today · ₹999/day",
-      price: "₹999/day",
-      imageUrl: "https://picsum.photos/seed/wagonr/400/260",
-    },
-    {
-      name: "Hero Splendor",
-      type: "Bike",
-      description: "Booked yesterday · ₹349/day",
-      price: "₹349/day",
-      imageUrl: "https://picsum.photos/seed/splendor/400/260",
-    },
-    {
-      name: "Toyota Fortuner",
-      type: "SUV",
-      description: "Booked this morning · ₹3299/day",
-      price: "₹3299/day",
-      imageUrl: "https://picsum.photos/seed/fortuner/400/260",
-    },
-    {
-      name: "Volvo Bus",
-      type: "Bus",
-      description: "Booked yesterday · ₹4599/day",
-      price: "₹4599/day",
-      imageUrl: "https://picsum.photos/seed/volvobus/400/260",
-    },
-    {
-      name: "TVS Apache",
-      type: "Bike",
-      description: "Booked today · ₹749/day",
-      price: "₹749/day",
-      imageUrl: "https://picsum.photos/seed/apache/400/260",
-    },
-    {
-      name: "Honda City",
-      type: "Car",
-      description: "Booked today · ₹1599/day",
-      price: "₹1599/day",
-      imageUrl: "https://picsum.photos/seed/hondacity/400/260",
-    },
-    {
-      name: "Ford EcoSport",
-      type: "SUV",
-      description: "Booked yesterday · ₹1799/day",
-      price: "₹1799/day",
-      imageUrl: "https://picsum.photos/seed/ecosport/400/260",
-    },
-    {
-      name: "Bajaj Avenger",
-      type: "Bike",
-      description: "Booked today · ₹599/day",
-      price: "₹599/day",
-      imageUrl: "https://picsum.photos/seed/avenger/400/260",
-    },
-    {
-      name: "Hyundai Verna",
-      type: "Car",
-      description: "Booked yesterday · ₹1399/day",
-      price: "₹1399/day",
-      imageUrl: "https://picsum.photos/seed/verna/400/260",
-    },
-    {
-      name: "MG Hector",
-      type: "SUV",
-      description: "Booked today · ₹1899/day",
-      price: "₹1899/day",
-      imageUrl: "https://picsum.photos/seed/hector/400/260",
-    },
-    {
-      name: "Tata Super Ace",
-      type: "Bus",
-      description: "Booked yesterday · ₹2199/day",
-      price: "₹2199/day",
-      imageUrl: "https://picsum.photos/seed/superace/400/260",
-    },
-    {
-      name: "Royal Enfield Classic",
-      type: "Bike",
-      description: "Booked today · ₹999/day",
-      price: "₹999/day",
-      imageUrl: "https://picsum.photos/seed/classic/400/260",
-    },
-  ];
+  // const recentBookings = [
+  //   {
+  //     name: "Maruti Wagon R",
+  //     type: "Car",
+  //     description: "Booked today · ₹999/day",
+  //     price: "₹999/day",
+  //     imageUrl: "https://picsum.photos/seed/wagonr/400/260",
+  //   },
+  //   {
+  //     name: "Hero Splendor",
+  //     type: "Bike",
+  //     description: "Booked yesterday · ₹349/day",
+  //     price: "₹349/day",
+  //     imageUrl: "https://picsum.photos/seed/splendor/400/260",
+  //   },
+  //   {
+  //     name: "Toyota Fortuner",
+  //     type: "SUV",
+  //     description: "Booked this morning · ₹3299/day",
+  //     price: "₹3299/day",
+  //     imageUrl: "https://picsum.photos/seed/fortuner/400/260",
+  //   },
+  //   {
+  //     name: "Volvo Bus",
+  //     type: "Bus",
+  //     description: "Booked yesterday · ₹4599/day",
+  //     price: "₹4599/day",
+  //     imageUrl: "https://picsum.photos/seed/volvobus/400/260",
+  //   },
+  //   {
+  //     name: "TVS Apache",
+  //     type: "Bike",
+  //     description: "Booked today · ₹749/day",
+  //     price: "₹749/day",
+  //     imageUrl: "https://picsum.photos/seed/apache/400/260",
+  //   },
+  //   {
+  //     name: "Honda City",
+  //     type: "Car",
+  //     description: "Booked today · ₹1599/day",
+  //     price: "₹1599/day",
+  //     imageUrl: "https://picsum.photos/seed/hondacity/400/260",
+  //   },
+  //   {
+  //     name: "Ford EcoSport",
+  //     type: "SUV",
+  //     description: "Booked yesterday · ₹1799/day",
+  //     price: "₹1799/day",
+  //     imageUrl: "https://picsum.photos/seed/ecosport/400/260",
+  //   },
+  //   {
+  //     name: "Bajaj Avenger",
+  //     type: "Bike",
+  //     description: "Booked today · ₹599/day",
+  //     price: "₹599/day",
+  //     imageUrl: "https://picsum.photos/seed/avenger/400/260",
+  //   },
+  //   {
+  //     name: "Hyundai Verna",
+  //     type: "Car",
+  //     description: "Booked yesterday · ₹1399/day",
+  //     price: "₹1399/day",
+  //     imageUrl: "https://picsum.photos/seed/verna/400/260",
+  //   },
+  //   {
+  //     name: "MG Hector",
+  //     type: "SUV",
+  //     description: "Booked today · ₹1899/day",
+  //     price: "₹1899/day",
+  //     imageUrl: "https://picsum.photos/seed/hector/400/260",
+  //   },
+  //   {
+  //     name: "Tata Super Ace",
+  //     type: "Bus",
+  //     description: "Booked yesterday · ₹2199/day",
+  //     price: "₹2199/day",
+  //     imageUrl: "https://picsum.photos/seed/superace/400/260",
+  //   },
+  //   {
+  //     name: "Royal Enfield Classic",
+  //     type: "Bike",
+  //     description: "Booked today · ₹999/day",
+  //     price: "₹999/day",
+  //     imageUrl: "https://picsum.photos/seed/classic/400/260",
+  //   },
+  // ];
 
   const recommendedVehicles = [
     {
@@ -356,29 +368,45 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
   ];
 
 
-  return (
-    <div style={{ display: "flex" }}>
-      <Sidebar active={active} onSelect={(k) => setActive(k)} />
-      <div style={styles.page}>
-        <main style={styles.mainGrid}>
-          <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.statsSection }}>
-            <div style={styles.statsRow}>
-              {dashboardStats.map((item) => (
-                <div key={item.label} style={styles.statCard}>
-                  <div style={{ ...styles.statIcon, background: item.accent + "22", color: item.accent }}>
-                    {item.icon}
-                  </div>
-                  <div>
-                    <div style={styles.statLabel}>{item.label}</div>
-                    <div style={styles.statValue}>{item.value}</div>
-                    <div style={styles.statSub}>{item.action}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+ 
+  
+ 
 
-          <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.dashboardOfferSection }}>
+  const allVehicles = [...popularVehicles, ...recommendedVehicles];
+  const likedVehicles = allVehicles.filter((vehicle) => likedVehicleNames.includes(vehicle.name));
+
+  const renderContent = () => {
+    if (active === "wishlist") {
+      return (
+        <div style={{ paddingTop: "24px" }}>
+          <CustomerSidebarWishlist
+            likedVehicles={likedVehicles}
+            onViewDetails={onViewDetails}
+            onToggleWishlist={handleToggleWishlist}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.statsSection }}>
+          <div style={styles.statsRow}>
+            {dashboardStats.map((item) => (
+              <div key={item.label} style={styles.statCard}>
+                <div style={{ ...styles.statIcon, background: item.accent + "22", color: item.accent }}>
+                  {item.icon}
+                </div>
+                <div>
+                  <div style={styles.statLabel}>{item.label}</div>
+                  <div style={styles.statValue}>{item.value}</div>
+                  <div style={styles.statSub}>{item.action}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.dashboardOfferSection }}>
             <div style={styles.offerHeader}>
               <div>
                 <h3 style={styles.panelTitle}>Today's Offers</h3>
@@ -403,8 +431,7 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
               </button>
             </div>
           </section>
-
-          <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.popularSection }}>
+         <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.popularSection }}>
             <div style={styles.offerHeader}>
               <div>
                 <h3 style={styles.panelTitle}>Popular Vehicles</h3>
@@ -414,9 +441,33 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
             <div style={styles.popularGrid}>
               {popularVehicles.map((vehicle) => (
                 <div key={vehicle.name} style={styles.popularCard}>
-                  <button type="button" style={styles.heartButton} aria-label="Like vehicle">
+                  <button
+                    type="button"
+                    style={{
+                      ...styles.heartButton,
+                      ...(likedVehicleNames.includes(vehicle.name)
+                        ? { background: "#fee2e2", color: "#ef4444" }
+                        : {}),
+                    }}
+                    aria-label="Like vehicle"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleToggleWishlist(vehicle);
+                    }}
+                  >
                     ❤
                   </button>
+                  <div style={{ marginBottom: "12px", borderRadius: "16px", overflow: "hidden", background: "#f3f4f6" }}>
+                    <img
+                      src={vehicle.imageUrl}
+                      alt={vehicle.name}
+                      onError={(event) => {
+                        event.target.onerror = null;
+                        event.target.src = carImage;
+                      }}
+                      style={{ width: "100%", height: "160px", objectFit: "cover", display: "block" }}
+                    />
+                  </div>
                   <div style={styles.popularCardContent}>
                     <h4 style={styles.popularCardTitle}>{vehicle.name}</h4>
                     <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
@@ -432,37 +483,7 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
               ))}
             </div>
           </section>
-
-          <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.popularSection }}>
-            <div style={styles.offerHeader}>
-              <div>
-                <h3 style={styles.panelTitle}>Recently Bookings</h3>
-                <p style={styles.panelText}>See the same vehicle card layout for the latest bookings.</p>
-              </div>
-            </div>
-            <div style={styles.popularGrid}>
-              {recentBookings.map((vehicle) => (
-                <div key={vehicle.name} style={styles.popularCard}>
-                  <button type="button" style={styles.heartButton} aria-label="Like vehicle">
-                    ❤
-                  </button>
-                  <div style={styles.popularCardContent}>
-                    <h4 style={styles.popularCardTitle}>{vehicle.name}</h4>
-                    <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
-                    <p style={styles.popularCardInfo}>{vehicle.description}</p>
-                    <div style={styles.popularCardFooter}>
-                      <button type="button" style={styles.viewDetailsButton} onClick={onViewDetails}>
-                        View Details
-                      </button>
-                      <span style={styles.popularPrice}>{vehicle.price}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.popularSection }}>
+           <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.popularSection }}>
             <div style={styles.offerHeader}>
               <div>
                 <h3 style={styles.panelTitle}>Recommended for You</h3>
@@ -472,9 +493,33 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
             <div style={styles.popularGrid}>
               {recommendedVehicles.map((vehicle) => (
                 <div key={vehicle.name} style={styles.popularCard}>
-                  <button type="button" style={styles.heartButton} aria-label="Like vehicle">
+                  <button
+                    type="button"
+                    style={{
+                      ...styles.heartButton,
+                      ...(likedVehicleNames.includes(vehicle.name)
+                        ? { background: "#fee2e2", color: "#ef4444" }
+                        : {}),
+                    }}
+                    aria-label="Like vehicle"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleToggleWishlist(vehicle);
+                    }}
+                  >
                     ❤
                   </button>
+                  <div style={{ marginBottom: "12px", borderRadius: "16px", overflow: "hidden", background: "#f3f4f6" }}>
+                    <img
+                      src={vehicle.imageUrl}
+                      alt={vehicle.name}
+                      onError={(event) => {
+                        event.target.onerror = null;
+                        event.target.src = carImage;
+                      }}
+                      style={{ width: "100%", height: "160px", objectFit: "cover", display: "block" }}
+                    />
+                  </div>
                   <div style={styles.popularCardContent}>
                     <h4 style={styles.popularCardTitle}>{vehicle.name}</h4>
                     <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
@@ -490,38 +535,139 @@ export default function CustomerDashboard({ onLogout, onViewDetails }) {
               ))}
             </div>
           </section>
+      </>
+    );
+  };
 
-          <section style={{ ...styles.footerSection, ...styles.fullWidthSection }}>
-            <div style={styles.footerInner}>
-              <div style={styles.footerBrand}>
-                <h3 style={styles.footerBrandTitle}>RentWheels</h3>
-                <p style={styles.footerBrandText}>
-                  Convenient vehicle rentals for every journey, powered by smart booking and trusted service.
-                </p>
+  return (
+    <div className="booking-details-shell">
+      <Sidebar active={active} onSelect={(k) => setActive(k)} onLogout={onLogout} />
+      <div className="booking-page-content">
+        <header className="booking-topbar">
+          <div className="booking-brand">
+            <div className="booking-brand-logo">🚗</div>
+            <div>
+              <div className="booking-brand-name">VehicleHub</div>
+              <div className="booking-brand-subtitle">Book your next ride</div>
+            </div>
+          </div>
+
+          <div className="booking-topbar-search-row">
+            <div className="booking-search-wrapper">
+              <div className="topbar-search">
+                <span>🔍</span>
+                <input
+                  type="text"
+                  aria-label="Search vehicles"
+                  placeholder="Search by vehicle name, city, Area, pincode..."
+                />
               </div>
-              <div style={styles.footerLinks}>
-                <div style={styles.footerColumn}>
-                  <h4 style={styles.footerHeading}>Explore</h4>
-                  <button type="button" style={styles.footerLink}>Home</button>
-                  <button type="button" style={styles.footerLink}>Vehicles</button>
-                  <button type="button" style={styles.footerLink}>Offers</button>
+              <button type="button" className="topbar-search-button">
+                Search
+              </button>
+
+              <div className="search-dropdown">
+                <div className="search-field">
+                  <span>🚗</span>
+                  <div>
+                    <label htmlFor="searchVehicle">Vehicle Name</label>
+                    <strong>
+                      <input
+                        id="searchVehicle"
+                        type="text"
+                        placeholder="Enter vehicle name"
+                      />
+                    </strong>
+                  </div>
                 </div>
-                <div style={styles.footerColumn}>
-                  <h4 style={styles.footerHeading}>Support</h4>
-                  <button type="button" style={styles.footerLink}>How It Works</button>
-                  <button type="button" style={styles.footerLink}>About Us</button>
-                  <button type="button" style={styles.footerLink}>Contact</button>
+                <div className="search-field">
+                  <span>🏙️</span>
+                  <div>
+                    <label htmlFor="searchCity">City</label>
+                    <strong>
+                      <input
+                        id="searchCity"
+                        type="text"
+                        placeholder="Enter city"
+                      />
+                    </strong>
+                  </div>
                 </div>
+                <div className="search-field">
+                  <span>📍</span>
+                  <div>
+                    <label htmlFor="searchArea">Area</label>
+                    <strong>
+                      <input
+                        id="searchArea"
+                        type="text"
+                        placeholder="Enter area"
+                      />
+                    </strong>
+                  </div>
+                </div>
+                <div className="search-field">
+                  <span>📮</span>
+                  <div>
+                    <label htmlFor="searchPincode">Pincode</label>
+                    <strong>
+                      <input
+                        id="searchPincode"
+                        type="text"
+                        placeholder="Enter pincode"
+                      />
+                    </strong>
+                  </div>
+                </div>
+                <button type="button" className="search-button">
+                  Search Vehicles
+                </button>
               </div>
             </div>
-            <div style={styles.footerBottom}>
-              <span style={styles.footerCopyright}>© 2026 RentWheels. All rights reserved.</span>
-              <span style={styles.footerContact}>Contact: support@rentwheels.com</span>
+          </div>
+
+          <div className="booking-topbar-actions">
+            <button type="button" className="topbar-icon-button" aria-label="Notifications">
+              🔔
+            </button>
+            <button type="button" className="topbar-avatar-button" aria-label="Profile">
+              <img src={profilePlaceholder} alt="Customer profile" />
+            </button>
+          </div>
+        </header>
+        {renderContent()}
+
+        <section style={{ ...styles.footerSection, ...styles.fullWidthSection }}>
+          <div style={styles.footerInner}>
+            <div style={styles.footerBrand}>
+              <h3 style={styles.footerBrandTitle}>RentWheels</h3>
+              <p style={styles.footerBrandText}>
+                Convenient vehicle rentals for every journey, powered by smart booking and trusted service.
+              </p>
             </div>
-          </section>
-        </main>
-      </div>
+            <div style={styles.footerLinks}>
+              <div style={styles.footerColumn}>
+                <h4 style={styles.footerHeading}>Explore</h4>
+                <button type="button" style={styles.footerLink}>Home</button>
+                <button type="button" style={styles.footerLink}>Vehicles</button>
+                <button type="button" style={styles.footerLink}>Offers</button>
+              </div>
+              <div style={styles.footerColumn}>
+                <h4 style={styles.footerHeading}>Support</h4>
+                <button type="button" style={styles.footerLink}>How It Works</button>
+                <button type="button" style={styles.footerLink}>About Us</button>
+                <button type="button" style={styles.footerLink}>Contact</button>
+              </div>
+            </div>
+          </div>
+          <div style={styles.footerBottom}>
+            <span style={styles.footerCopyright}>© 2026 RentWheels. All rights reserved.</span>
+            <span style={styles.footerContact}>Contact: support@rentwheels.com</span>
+          </div>
+        </section>
+      </div>      
     </div>
+     
   );
 }
 
@@ -540,7 +686,7 @@ const styles = {
     boxSizing: "border-box",
   },
   statsSection: {
-    marginTop: "20px",
+    marginTop: "83px",
   },
   statsRow: {
     display: "grid",
@@ -626,8 +772,9 @@ const styles = {
     cursor: "pointer",
   },
   dashboardOfferSection: {
-    marginTop: "24px",
+    marginTop: "10px",
     paddingBottom: "0",
+   
   },
   offerHeader: {
     marginBottom: "18px",
@@ -644,6 +791,7 @@ const styles = {
     borderRadius: "20px",
     padding: "24px 24px 32px",
     boxShadow: "0 18px 32px rgba(15, 23, 42, 0.08)",
+    marginBottom: "40px",
   },
   offerChip: {
     display: "inline-flex",
@@ -683,7 +831,7 @@ const styles = {
     boxShadow: "0 10px 28px rgba(15, 23, 42, 0.08)",
   },
   popularSection: {
-    marginTop: "24px",
+    marginTop: "10px",
   },
   popularGrid: {
     display: "grid",
@@ -793,7 +941,6 @@ const styles = {
   footerSection: {
     marginTop: "24px",
     background: "#0c1726",
-    borderRadius: "32px",
     padding: "32px",
     color: "#f8fafc",
   },
@@ -955,3 +1102,4 @@ const styles = {
     cursor: "pointer",
   },
 };
+

@@ -12,6 +12,7 @@ export default function BookingDetails({ onBack }) {
   const [dropLocation, setDropLocation] = useState("");
   const [driverOption, setDriverOption] = useState("self");
   const [currentStep, setCurrentStep] = useState(1);
+  const [active, setActive] = React.useState("dashboard");
 
   const bookingId = "RR1234567890";
   const paymentMethod = "Paid Successfully via Razorpay";
@@ -85,7 +86,7 @@ export default function BookingDetails({ onBack }) {
 
   return (
     <div className="booking-details-shell">
-      <Sidebar active="search" />
+      <Sidebar active={active} onSelect={(k) => setActive(k)}/>
       <div className="booking-page-content">
         <header className="booking-topbar">
           <div className="booking-brand">

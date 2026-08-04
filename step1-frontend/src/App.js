@@ -7,71 +7,59 @@ import CustomerDashboard from "./CustomerDashboard";
 import ViewVehicleDetails from "./ViewVehicleDetails";
 import BookingDetails from "./BookingDetails";
 
-const defaultVehicle = {
-  name: "Hyundai i20",
-  fuel: "Petrol",
-  transmission: "Manual",
-  seats: "5 Seater",
-  priceHour: "₹149",
-  priceDay: "₹1499",
-  priceWeek: "₹8999",
-  priceMonth: "₹29999",
-  rating: "4.5",
-  reviews: 126,
-  distance: "1.2 km away",
-  owner: {
-    name: "Amit Sharma",
-    rating: "4.7",
-    reviews: 89,
-    joined: "Jan 2022",
-    phone: "+91 98765 43210",
-    email: "amit.sharma@example.com",
-  },
-};
-
 function App() {
   const [currentPage, setCurrentPage] = useState("landing");
   const [selectedRole, setSelectedRole] = useState("customer");
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState(defaultVehicle);
+  const [pendingBookingRedirect, setPendingBookingRedirect] = useState(false);
+  const [selectedVehicle] = useState({
+    name: "Hyundai i20",
+    fuel: "Petrol",
+    transmission: "Manual",
+    seats: "5 Seater",
+    priceDay: "₹1499",
+    priceWeek: "₹8999",
+    priceMonth: "₹29999",
+    rating: "4.5",
+    reviews: 126,
+    distance: "1.2 km away",
+    owner: {
+      name: "Amit Sharma",
+      rating: "4.7",
+      reviews: 89,
+      joined: "Jan 2022",
+      phone: "+91 98765 43210",
+      email: "amit.sharma@example.com",
+    },
+  });
 
   const handleLoginSuccess = (role) => {
     if (role === "customer") {
       setIsCustomerLoggedIn(true);
-      setCurrentPage("dashboard");
+      if (pendingBookingRedirect) {
+        setPendingBookingRedirect(false);
+        setCurrentPage("bookingDetails");
+      } else {
+        setCurrentPage("dashboard");
+      }
     }
   };
 
   const handleLogout = () => {
     setIsCustomerLoggedIn(false);
+    setPendingBookingRedirect(false);
     setSelectedRole("customer");
     setCurrentPage("landing");
   };
 
-  const handleViewVehicleDetails = (vehicle) => {
-    const nextVehicle = {
-      ...defaultVehicle,
-      ...vehicle,
-      name: vehicle?.name || defaultVehicle.name,
-      fuel: vehicle?.type === "Bike" ? "Petrol" : defaultVehicle.fuel,
-      transmission: vehicle?.type === "SUV" ? "Automatic" : defaultVehicle.transmission,
-      seats: vehicle?.type === "SUV" ? "7 Seater" : defaultVehicle.seats,
-      priceDay: vehicle?.price || defaultVehicle.priceDay,
-      priceHour: defaultVehicle.priceHour,
-      priceWeek: defaultVehicle.priceWeek,
-      priceMonth: defaultVehicle.priceMonth,
-      rating: defaultVehicle.rating,
-      reviews: defaultVehicle.reviews,
-      distance: defaultVehicle.distance,
-      owner: defaultVehicle.owner,
-    };
+  const handleBookVehicle = () => {
+    if (isCustomerLoggedIn) {
+      setCurrentPage("bookingDetails");
+      return;
+    }
 
-    setSelectedVehicle(nextVehicle);
-    setCurrentPage("vehicleDetails");
-  };
-
-  const handleOpenBookingDetails = () => {
-    setCurrentPage("bookingDetails");
+    setPendingBookingRedirect(true);
+    setCurrentPage("login");
   };
 
   if (currentPage === "login") {
@@ -107,12 +95,7 @@ function App() {
       <ViewVehicleDetails
         vehicle={selectedVehicle}
         onBack={() => setCurrentPage("landing")}
-        onLoginClick={() => setCurrentPage("login")}
-        onRegisterClick={() => {
-          setSelectedRole("customer");
-          setCurrentPage("register");
-        }}
-        onBookVehicle={handleOpenBookingDetails}
+        onBookVehicle={handleBookVehicle}
       />
     );
   }
@@ -132,9 +115,7 @@ function App() {
         setSelectedRole("customer");
         setCurrentPage("register");
       }}
-      onViewDetailsClick={handleViewVehicleDetails}
-      onHomeClick={() => setCurrentPage("landing")}
-      onVehiclesClick={handleOpenBookingDetails}
+      onViewDetailsClick={() => setCurrentPage("vehicleDetails")}
     />
   );
 }

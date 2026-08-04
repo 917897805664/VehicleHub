@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Sidebar({ active = "dashboard", onSelect = () => {} }) {
+export default function Sidebar({ active = "dashboard", onSelect = () => {}, onLogout }) {
   const items = [
     { key: "dashboard", label: "Dashboard" },
     { key: "search", label: "Search Vehicles" },
@@ -14,6 +14,18 @@ export default function Sidebar({ active = "dashboard", onSelect = () => {} }) {
     { key: "help", label: "Help Center" },
     { key: "logout", label: "Logout" },
   ];
+
+  const handleNavClick = (item) => {
+    if (item.key === "logout") {
+      const shouldLogout = window.confirm("Are you sure you are logging out?");
+      if (shouldLogout && onLogout) {
+        onLogout();
+      }
+      return;
+    }
+
+    onSelect(item.key);
+  };
 
   return (
     <aside style={styles.sidebar}>
@@ -31,8 +43,13 @@ export default function Sidebar({ active = "dashboard", onSelect = () => {} }) {
             key={it.key}
             role="button"
             tabIndex={0}
-            onClick={() => onSelect(it.key)}
-            onKeyDown={(e) => (e.key === "Enter" ? onSelect(it.key) : null)}
+            onClick={() => handleNavClick(it)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleNavClick(it);
+              }
+            }}
             style={{ ...styles.navItem, ...(active === it.key ? styles.navItemActive : {}) }}
           >
             <div style={styles.navIcon}>{it.label.charAt(0)}</div>
