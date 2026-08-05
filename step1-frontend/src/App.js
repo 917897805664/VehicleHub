@@ -12,7 +12,7 @@ function App() {
   const [selectedRole, setSelectedRole] = useState("customer");
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState(false);
   const [pendingBookingRedirect, setPendingBookingRedirect] = useState(false);
-  const [selectedVehicle] = useState({
+  const [selectedVehicle, setSelectedVehicle] = useState({
     name: "Hyundai i20",
     fuel: "Petrol",
     transmission: "Manual",
@@ -52,14 +52,19 @@ function App() {
     setCurrentPage("landing");
   };
 
-  const handleBookVehicle = () => {
-    if (isCustomerLoggedIn) {
-      setCurrentPage("bookingDetails");
-      return;
+  const handleViewDetails = (vehicleData) => {
+    if (vehicleData) {
+      setSelectedVehicle(vehicleData);
     }
+    setCurrentPage("vehicleDetails");
+  };
 
-    setPendingBookingRedirect(true);
-    setCurrentPage("login");
+  // Landing inline details state
+  const [showLandingInline, setShowLandingInline] = useState(false);
+
+  const handleLandingView = (vehicleData) => {
+    if (vehicleData) setSelectedVehicle(vehicleData);
+    setShowLandingInline(true);
   };
 
   if (currentPage === "login") {
@@ -90,6 +95,18 @@ function App() {
     );
   }
 
+  const handleBookVehicle = () => {
+    setShowLandingInline(false);
+
+    if (isCustomerLoggedIn) {
+      setCurrentPage("bookingDetails");
+      return;
+    }
+
+    setPendingBookingRedirect(true);
+    setCurrentPage("login");
+  };
+
   if (currentPage === "vehicleDetails") {
     return (
       <ViewVehicleDetails
@@ -105,18 +122,37 @@ function App() {
   }
 
   if (currentPage === "dashboard" && isCustomerLoggedIn) {
-    return <CustomerDashboard onLogout={handleLogout} onViewDetails={() => setCurrentPage("vehicleDetails")} />;
+    return (
+      <CustomerDashboard
+        onLogout={handleLogout}
+        onViewDetails={handleViewDetails}
+        onBookVehicle={handleBookVehicle}
+      />
+    );
   }
 
   return (
-    <LandingPage
-      onLoginClick={() => setCurrentPage("login")}
-      onRegisterClick={() => {
-        setSelectedRole("customer");
-        setCurrentPage("register");
-      }}
-      onViewDetailsClick={() => setCurrentPage("vehicleDetails")}
-    />
+    <>
+      <LandingPage
+        onLoginClick={() => setCurrentPage("login")}
+        onRegisterClick={() => {
+          setSelectedRole("customer");
+          setCurrentPage("register");
+        }}
+        onViewDetailsClick={handleLandingView}
+      />
+
+      {showLandingInline && selectedVehicle && (
+        <div style={{ position: "relative", zIndex: 20 }}>
+          <ViewVehicleDetails
+            vehicle={selectedVehicle}
+            onBack={() => setShowLandingInline(false)}
+            onBookVehicle={handleBookVehicle}
+            showFooter={false}
+          />
+        </div>
+      )}
+    </>
   );
 }
 

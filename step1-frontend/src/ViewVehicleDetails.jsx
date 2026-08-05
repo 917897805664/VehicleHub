@@ -1,23 +1,24 @@
 import React, { useEffect } from "react";
 import carImage from "./assets/car_image.jpg";
 
-export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle }) {
+export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, showFooter = true }) {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
-
-  const mainVehicle = vehicle || {
+  const defaultVehicle = {
     name: "Hyundai i20",
     fuel: "Petrol",
     transmission: "Manual",
     seats: "5 Seater",
-    priceHour:"₹149",
+    priceHour: "₹149",
     priceDay: "₹1499",
     priceWeek: "₹8999",
     priceMonth: "₹29999",
     rating: "4.5",
     reviews: 126,
     distance: "1.2 km away",
+    description: "Comfortable hatchback with spacious seating and smooth city drive.",
+    imageUrl: carImage,
     owner: {
       name: "Amit Sharma",
       rating: "4.7",
@@ -28,8 +29,17 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle }) {
     },
   };
 
+  const mainVehicle = {
+    ...defaultVehicle,
+    ...(vehicle || {}),
+    owner: {
+      ...defaultVehicle.owner,
+      ...(vehicle?.owner || {}),
+    },
+  };
+
   const imageSources = [
-    carImage,
+    mainVehicle.imageUrl || carImage,
     carImage,
     carImage,
     carImage,
@@ -396,36 +406,38 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle }) {
         </div>
       </div>
 
-      <div className="site-footer">
-        <div className="footer-inner">
-          <div className="footer-top">
-            <div>
-              <h2 className="footer-brand-name">RentWheels</h2>
-              <p className="footer-brand-copy">Convenient vehicle rentals for every journey, powered by smart booking and trusted service.</p>
+      {showFooter && (
+        <div className="site-footer">
+          <div className="footer-inner">
+            <div className="footer-top">
+              <div>
+                <h2 className="footer-brand-name">RentWheels</h2>
+                <p className="footer-brand-copy">Convenient vehicle rentals for every journey, powered by smart booking and trusted service.</p>
+              </div>
+
+              <div className="footer-links">
+                <div>
+                  <h4>Explore</h4>
+                  <a href="/">Home</a>
+                  <a href="/vehicles">Vehicles</a>
+                  <a href="/offers">Offers</a>
+                </div>
+                <div>
+                  <h4>Support</h4>
+                  <a href="/how-it-works">How It Works</a>
+                  <a href="/about">About Us</a>
+                  <a href="/contact">Contact</a>
+                </div>
+              </div>
             </div>
 
-            <div className="footer-links">
-              <div>
-                <h4>Explore</h4>
-                <a href="/">Home</a>
-                <a href="/vehicles">Vehicles</a>
-                <a href="/offers">Offers</a>
-              </div>
-              <div>
-                <h4>Support</h4>
-                <a href="/how-it-works">How It Works</a>
-                <a href="/about">About Us</a>
-                <a href="/contact">Contact</a>
-              </div>
+            <div className="footer-bottom">
+              <div>© {new Date().getFullYear()} RentWheels. All rights reserved.</div>
+              <div>Contact: <a href="mailto:support@rentwheels.com">support@rentwheels.com</a></div>
             </div>
-          </div>
-
-          <div className="footer-bottom">
-            <div>© {new Date().getFullYear()} RentWheels. All rights reserved.</div>
-            <div>Contact: <a href="mailto:support@rentwheels.com">support@rentwheels.com</a></div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

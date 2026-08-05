@@ -83,7 +83,7 @@ export default function CustomerSidebarWishlist({ likedVehicles = [], onViewDeta
 
                 <div style={styles.itemFooter}>
                   <span style={styles.price}>{item.price}</span>
-                  <button type="button" style={styles.viewButton} onClick={onViewDetails}>
+                  <button type="button" style={styles.viewButton} onClick={() => onViewDetails?.(item)}>
                     View Details
                   </button>
                 </div>

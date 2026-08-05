@@ -1,11 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
+import ViewVehicleDetails from "./ViewVehicleDetails";
 import Sidebar from "./Sidebar";
 import CustomerSidebarWishlist from "./CustomerSidebarWishlist";
 import carImage from "./assets/car_image.jpg";
 import profilePlaceholder from "./assets/profile_placeholder.svg";
 import "./index.css";
-export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
+export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle, onLogout }) {
   const [active, setActive] = React.useState("dashboard");
+  const [inlineVehicle, setInlineVehicle] = useState(null);
+  const [showInlineDetails, setShowInlineDetails] = useState(false);
+
+  const handleInlineView = (vehicle) => {
+    setInlineVehicle(vehicle || null);
+    setShowInlineDetails(true);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  };
+
+  const handleInlineBack = () => {
+    setShowInlineDetails(false);
+    setInlineVehicle(null);
+  };
 
   const dashboardOffers = [
     {
@@ -376,6 +390,18 @@ export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
   const likedVehicles = allVehicles.filter((vehicle) => likedVehicleNames.includes(vehicle.name));
 
   const renderContent = () => {
+    if (showInlineDetails && inlineVehicle) {
+      return (
+        <div style={{ paddingTop: "24px" }}>
+          <ViewVehicleDetails
+            vehicle={inlineVehicle}
+            onBack={handleInlineBack}
+            onBookVehicle={onBookVehicle}
+            showFooter={false}
+          />
+        </div>
+      );
+    }
     if (active === "wishlist") {
       return (
         <div style={{ paddingTop: "24px" }}>
@@ -431,7 +457,7 @@ export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
               </button>
             </div>
           </section>
-         <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.popularSection }}>
+        <section style={{ ...styles.panel, ...styles.fullWidthSection, ...styles.popularSection }}>
             <div style={styles.offerHeader}>
               <div>
                 <h3 style={styles.panelTitle}>Popular Vehicles</h3>
@@ -446,7 +472,7 @@ export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
                     style={{
                       ...styles.heartButton,
                       ...(likedVehicleNames.includes(vehicle.name)
-                        ? { background: "#fee2e2", color: "#ef4444" }
+                        ? {background: "#fee2e2",color: "#ef4444" }
                         : {}),
                     }}
                     aria-label="Like vehicle"
@@ -473,7 +499,7 @@ export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
                     <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
                     <p style={styles.popularCardInfo}>{vehicle.description}</p>
                     <div style={styles.popularCardFooter}>
-                      <button type="button" style={styles.viewDetailsButton} onClick={onViewDetails}>
+                      <button type="button" style={styles.viewDetailsButton} onClick={() => handleInlineView(vehicle)}>
                         View Details
                       </button>
                       <span style={styles.popularPrice}>{vehicle.price}</span>
@@ -498,7 +524,7 @@ export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
                     style={{
                       ...styles.heartButton,
                       ...(likedVehicleNames.includes(vehicle.name)
-                        ? { background: "#fee2e2", color: "#ef4444" }
+                        ? {background: "#fee2e2",color: "#ef4444" }
                         : {}),
                     }}
                     aria-label="Like vehicle"
@@ -525,7 +551,7 @@ export default function CustomerDashboard({ onBack ,onViewDetails, onLogout }) {
                     <p style={styles.popularCardSubtitle}>{vehicle.type}</p>
                     <p style={styles.popularCardInfo}>{vehicle.description}</p>
                     <div style={styles.popularCardFooter}>
-                      <button type="button" style={styles.viewDetailsButton} onClick={onViewDetails}>
+                      <button type="button" style={styles.viewDetailsButton} onClick={() => handleInlineView(vehicle)}>
                         View Details
                       </button>
                       <span style={styles.popularPrice}>{vehicle.price}</span>
