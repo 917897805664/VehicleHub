@@ -4,6 +4,7 @@ import Login from "./Login";
 import ForgotPassword from "./ForgotPassword";
 import LandingPage from "./LandingPage";
 import CustomerDashboard from "./CustomerDashboard";
+import VehicleOwnerDashboard from "./Vehicle_Owner_Details/VehicleOwnerDashboard";
 import ViewVehicleDetails from "./ViewVehicleDetails";
 import BookingDetails from "./BookingDetails";
 
@@ -11,6 +12,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState("landing");
   const [selectedRole, setSelectedRole] = useState("customer");
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState(false);
+  const [isOwnerLoggedIn, setIsOwnerLoggedIn] = useState(false);
   const [pendingBookingRedirect, setPendingBookingRedirect] = useState(false);
   const [bookingReferrer, setBookingReferrer] = useState(null);
   const [showDashboardVehicleDetails, setShowDashboardVehicleDetails] = useState(false);
@@ -38,6 +40,7 @@ function App() {
   const handleLoginSuccess = (role) => {
     if (role === "customer") {
       setIsCustomerLoggedIn(true);
+      setIsOwnerLoggedIn(false);
       if (pendingBookingRedirect) {
         setPendingBookingRedirect(false);
         setShowDashboardVehicleDetails(true);
@@ -45,11 +48,19 @@ function App() {
       } else {
         setCurrentPage("dashboard");
       }
+      return;
+    }
+
+    if (role === "vehicleOwner") {
+      setIsOwnerLoggedIn(true);
+      setIsCustomerLoggedIn(false);
+      setCurrentPage("ownerDashboard");
     }
   };
 
   const handleLogout = () => {
     setIsCustomerLoggedIn(false);
+    setIsOwnerLoggedIn(false);
     setPendingBookingRedirect(false);
     setShowDashboardVehicleDetails(false);
     setSelectedRole("customer");
@@ -164,6 +175,10 @@ function App() {
         onVehicleDetailsClosed={() => setShowDashboardVehicleDetails(false)}
       />
     );
+  }
+
+  if (currentPage === "ownerDashboard" && isOwnerLoggedIn) {
+    return <VehicleOwnerDashboard onLogout={handleLogout} />;
   }
 
   return (
