@@ -6,9 +6,19 @@ import suvIcon from "./assets/suv_icon.jpg";
 import truckIcon from "./assets/truck_icon.jpg";
 import busIcon from "./assets/bus_icon.jpg";
 import scooterIcon from "./assets/scooter_icon.jpg";
+import ViewVehicleDetails from "./ViewVehicleDetails";
 
-
-export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetailsClick, onHomeClick, onVehiclesClick }) {
+export default function LandingPage({
+  onLoginClick,
+  onRegisterClick,
+  onViewDetailsClick,
+  onHomeClick,
+  onVehiclesClick,
+  showVehicleDetails = false,
+  selectedVehicle = null,
+  onBackFromVehicleDetails,
+  onBookVehicle,
+}) {
   const vehicleTags = [
     { label: "Bike", icon: bikeIcon },
     { label: "Car", icon: carIcon },
@@ -129,149 +139,161 @@ export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetai
         </div>
       </header>
 
-      <main className="hero-container" id="home">
-        <section className="hero-copy-block">
-          <span className="hero-pill">SAFE • RELIABLE • AFFORDABLE</span>
-          <h1>
-            Rent Any Vehicle,
-            <br />
-            Anytime, <span className="hero-highlight">Anywhere</span>
-          </h1>
-          <p className="hero-text">
-            Find the perfect vehicle for your next trip. Choose from thousands of cars, bikes,
-            trucks and more.
-          </p>
+      {showVehicleDetails ? (
+        <main className="landing-inline-details">
+          <ViewVehicleDetails
+            vehicle={selectedVehicle}
+            onBack={onBackFromVehicleDetails}
+            onBookVehicle={onBookVehicle}
+            showFooter={false}
+          />
+        </main>
+      ) : (
+        <>
+          <main className="hero-container" id="home">
+            <section className="hero-copy-block">
+              <span className="hero-pill">SAFE • RELIABLE • AFFORDABLE</span>
+              <h1>
+                Rent Any Vehicle,
+                <br />
+                Anytime, <span className="hero-highlight">Anywhere</span>
+              </h1>
+              <p className="hero-text">
+                Find the perfect vehicle for your next trip. Choose from thousands of cars, bikes,
+                trucks and more.
+              </p>
 
-          <div className="hero-search-card">
-            <div className="search-field">
-              <span>📍</span>
-              <div>
-                <label>Current Location</label>
-                <strong>Current Location</strong>
-              </div>
-            </div>
-            <div className="search-field">
-              <span>📍</span>
-              <div>
-                <label>Select Location</label>
-                <strong>Choose destination</strong>
-              </div>
-            </div>
-            <button type="button" className="search-button">
-              Search Vehicles
-            </button>
-          </div>
-
-          <div className="vehicle-tags">
-            {vehicleTags.map((item) => (
-              <button key={item.label} type="button" className="vehicle-tag-item">
-                <div className="vehicle-tag-icon">
-                  <img src={item.icon} alt={`${item.label} icon`} />
+              <div className="hero-search-card">
+                <div className="search-field">
+                  <span>📍</span>
+                  <div>
+                    <label>Current Location</label>
+                    <strong>Current Location</strong>
+                  </div>
                 </div>
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="hero-visual" aria-label="Hero image and offers">
-            <img className="hero-car" src={carImage} alt="Featured rental car" />
-        </section>
-      </main>
-
-      <section className="category-row">
-        <div className="category-row-inner">
-          {vehicleCategories.map((category) => (
-            <div key={category} className="category-chip">
-              {category}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="offers-row" id="offers">
-        <div className="offers-panel full-width-offers">
-          <div className="section-heading">
-            <h2>Today's Offers</h2>
-            <p>Automatic owner-only offers for bike, car, SUV and truck rentals.</p>
-          </div>
-          <div className="offers-carousel">
-            <button type="button" className="carousel-arrow carousel-arrow-left" onClick={handlePrevOffer}>
-              &lt;
-            </button>
-            <div className="offer-slide">
-              <span className="offer-chip">{offers[currentOffer].tag}</span>
-              <h3>{offers[currentOffer].title}</h3>
-              <p>{offers[currentOffer].subtitle}</p>
-              <p className="offer-detail">{offers[currentOffer].detail}</p>
-              <div className="offer-meta">
-                <span>{currentOffer + 1} of {offers.length}</span>
-              </div>
-            </div>
-            <button type="button" className="carousel-arrow carousel-arrow-right" onClick={handleNextOffer}>
-              &gt;
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="vehicle-section" id="vehicles">
-        <div className="vehicle-section-header">
-          <div>
-            <h2>Popular Vehicles</h2>
-            <p>Explore our top vehicle picks for a smooth and safe ride.</p>
-          </div>
-        </div>
-        <div className="vehicle-card-grid">
-          {popularVehicles.map((vehicle) => (
-            <article key={vehicle.name} className="vehicle-card">
-              <button type="button" className="heart-button">♡</button>
-              <img className="vehicle-card-media" src={vehicle.image} alt={vehicle.name} />
-              <div className="vehicle-card-meta">
-                <h3>{vehicle.name}</h3>
-                <p>{vehicle.type}</p>
-                <p className={vehicle.status === "Available" ? "status-available" : "status-unavailable"}>{vehicle.status}</p>
-                <p className="vehicle-price">{vehicle.price}</p>
-              </div>
-              <div className="vehicle-card-footer">
-                <span></span>
-                <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
-                  View Details
+                <div className="search-field">
+                  <span>📍</span>
+                  <div>
+                    <label>Select Location</label>
+                    <strong>Choose destination</strong>
+                  </div>
+                </div>
+                <button type="button" className="search-button">
+                  Search Vehicles
                 </button>
               </div>
-            </article>
-          ))}
-        </div>
-      </section>
 
-      <section className="vehicle-section recommended-section">
-        <div className="vehicle-section-header">
-          <div>
-            <h2>Recommended for You</h2>
-            <p>Handpicked rides tailored to your search preferences.</p>
-          </div>
-        </div>
-        <div className="vehicle-card-grid">
-          {recommendedVehicles.map((vehicle) => (
-            <article key={vehicle.name} className="vehicle-card">
-              <button type="button" className="heart-button">♡</button>
-              <img className="vehicle-card-media" src={vehicle.image} alt={vehicle.name} />
-              <div className="vehicle-card-meta">
-                <h3>{vehicle.name}</h3>
-                <p>{vehicle.type}</p>
-                <p className={vehicle.status === "Available" ? "status-available" : "status-unavailable"}>{vehicle.status}</p>
-                <p className="vehicle-price">{vehicle.price}</p>
+              <div className="vehicle-tags">
+                {vehicleTags.map((item) => (
+                  <button key={item.label} type="button" className="vehicle-tag-item">
+                    <div className="vehicle-tag-icon">
+                      <img src={item.icon} alt={`${item.label} icon`} />
+                    </div>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
               </div>
-              <div className="vehicle-card-footer">
-                <span></span>
-                <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
-                  View Details
+            </section>
+
+            <section className="hero-visual" aria-label="Hero image and offers">
+              <img className="hero-car" src={carImage} alt="Featured rental car" />
+            </section>
+          </main>
+
+          <section className="category-row">
+            <div className="category-row-inner">
+              {vehicleCategories.map((category) => (
+                <div key={category} className="category-chip">
+                  {category}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="offers-row" id="offers">
+            <div className="offers-panel full-width-offers">
+              <div className="section-heading">
+                <h2>Today's Offers</h2>
+                <p>Automatic owner-only offers for bike, car, SUV and truck rentals.</p>
+              </div>
+              <div className="offers-carousel">
+                <button type="button" className="carousel-arrow carousel-arrow-left" onClick={handlePrevOffer}>
+                  &lt;
+                </button>
+                <div className="offer-slide">
+                  <span className="offer-chip">{offers[currentOffer].tag}</span>
+                  <h3>{offers[currentOffer].title}</h3>
+                  <p>{offers[currentOffer].subtitle}</p>
+                  <p className="offer-detail">{offers[currentOffer].detail}</p>
+                  <div className="offer-meta">
+                    <span>{currentOffer + 1} of {offers.length}</span>
+                  </div>
+                </div>
+                <button type="button" className="carousel-arrow carousel-arrow-right" onClick={handleNextOffer}>
+                  &gt;
                 </button>
               </div>
-            </article>
-          ))}
-        </div>
-      </section>
+            </div>
+          </section>
+
+          <section className="vehicle-section" id="vehicles">
+            <div className="vehicle-section-header">
+              <div>
+                <h2>Popular Vehicles</h2>
+                <p>Explore our top vehicle picks for a smooth and safe ride.</p>
+              </div>
+            </div>
+            <div className="vehicle-card-grid">
+              {popularVehicles.map((vehicle) => (
+                <article key={vehicle.name} className="vehicle-card">
+                  <img className="vehicle-card-media" src={vehicle.image} alt={vehicle.name} />
+                  <div className="vehicle-card-meta">
+                    <h3>{vehicle.name}</h3>
+                    <p>{vehicle.type}</p>
+                    <p className={vehicle.status === "Available" ? "status-available" : "status-unavailable"}>{vehicle.status}</p>
+                    <p className="vehicle-price">{vehicle.price}</p>
+                  </div>
+                  <div className="vehicle-card-footer">
+                    <span></span>
+                    <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
+                      View Details
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="vehicle-section recommended-section">
+            <div className="vehicle-section-header">
+              <div>
+                <h2>Recommended for You</h2>
+                <p>Handpicked rides tailored to your search preferences.</p>
+              </div>
+            </div>
+            <div className="vehicle-card-grid">
+              {recommendedVehicles.map((vehicle) => (
+                <article key={vehicle.name} className="vehicle-card">
+                  <img className="vehicle-card-media" src={vehicle.image} alt={vehicle.name} />
+                  <div className="vehicle-card-meta">
+                    <h3>{vehicle.name}</h3>
+                    <p>{vehicle.type}</p>
+                    <p className={vehicle.status === "Available" ? "status-available" : "status-unavailable"}>{vehicle.status}</p>
+                    <p className="vehicle-price">{vehicle.price}</p>
+                  </div>
+                  <div className="vehicle-card-footer">
+                    <span></span>
+                    <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
+                      View Details
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section> 
+
+        </>
+      )}
 
       <footer className="site-footer" id="contact">
         <div className="footer-top">
@@ -302,3 +324,6 @@ export default function LandingPage({ onLoginClick, onRegisterClick, onViewDetai
     </div>
   );
 }
+
+
+

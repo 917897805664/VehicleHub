@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import carImage from "./assets/car_image.jpg";
 
-export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, showFooter = true }) {
+export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, onViewProfile, showFooter = true }) {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
@@ -189,8 +189,8 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, sho
                     <span>{mainVehicle.distance}</span>
                   </div>
                   <div>
-                    <strong>Rating</strong>
-                    <span>{mainVehicle.rating} / 5 ({mainVehicle.reviews} reviews)</span>
+                    <strong>Owner Name</strong>
+                    <span>{mainVehicle.owner.name}</span>
                   </div>
                 </div>
 
@@ -257,8 +257,10 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, sho
               </div>
             </article>
 
-            <article className="detail-card owner-details-card">
+            {/* <article className="detail-card owner-details-card">
+              <b className="card-title"> Owner Details</b>
               <div className="owner-details-head owner-details-center">
+               
                 <div className="owner-avatar-circle">
                   <img src={carImage} alt={mainVehicle.owner.name} />
                 </div>
@@ -268,7 +270,7 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, sho
                 </div>
               </div>
 
-              <div className="owner-contact-list">
+              {/* <div className="owner-contact-list">
                 <div className="owner-contact-item">
                   <span>Phone</span>
                   <strong>{mainVehicle.owner.phone}</strong>
@@ -277,13 +279,17 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, sho
                   <span>Email</span>
                   <strong>{mainVehicle.owner.email}</strong>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="owner-detail-actions">
-                <button type="button" className="primary-button owner-action-btn owner-chat-btn">Chat With Owner</button>
-                <button type="button" className="secondary-button owner-action-btn">View Profile</button>
+              {/* <div className="owner-detail-actions">
+                {/* <button type="button" className="primary-button owner-action-btn owner-chat-btn">Chat With Owner</button> */}
+                {/* <button type="button" className="secondary-button owner-action-btn" onClick={() => {
+                  if (typeof onViewProfile === "function") {
+                    onViewProfile();
+                  }
+                }}>View Profile</button>
               </div>
-            </article>
+            </article> */} 
 
             <article className="detail-card availability-card">
               <div className="availability-header">
@@ -337,8 +343,8 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, sho
                 </div>
               </div>
             </article>
-
-            <article className="detail-card ratings-card">
+             
+              <article className="detail-card ratings-card">
               <div className="ratings-header">
                 <h2>What others say about this vehicle</h2>
               </div>
@@ -369,12 +375,11 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, sho
               </div>
             </article>
 
-            <article className="detail-card reviews-card">
+              <article className="detail-card reviews-card reviews-cards">
               <div className="reviews-header">
                 <div>
                   <h2>Reviews</h2>
                 </div>
-                <a href="/reviews" className="view-all-reviews">View All Reviews</a>
               </div>
 
               <div className="review-item-card">
@@ -400,7 +405,21 @@ export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, sho
                   <p>Smooth ride and excellent service by the owner.</p>
                 </div>
               </div>
+
+              <div className="review-item-card">
+                <div className="review-avatar">PN</div>
+                <div className="review-body">
+                  <div className="review-meta-row">
+                    <strong>om Ithape</strong>
+                    <span>May 10, 2024</span>
+                  </div>
+                  <div className="review-stars">★★★★★</div>
+                  <p>Smooth ride and excellent service by the owner.</p>
+                </div>
+              </div>
+
             </article>
+
 
           </div>
         </div>

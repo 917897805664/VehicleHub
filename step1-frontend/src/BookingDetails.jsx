@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import Sidebar from "./Sidebar";
+
 import carImage from "./assets/car_image.jpg";
-import profilePlaceholder from "./assets/profile_placeholder.svg";
+
 
 export default function BookingDetails({ onBack }) {
   const [pickupDate, setPickupDate] = useState("");
@@ -12,7 +12,7 @@ export default function BookingDetails({ onBack }) {
   const [dropLocation, setDropLocation] = useState("");
   const [driverOption, setDriverOption] = useState("self");
   const [currentStep, setCurrentStep] = useState(1);
-  const [active, setActive] = React.useState("dashboard");
+
 
   const bookingId = "RR1234567890";
   const paymentMethod = "Paid Successfully via Razorpay";
@@ -75,7 +75,9 @@ export default function BookingDetails({ onBack }) {
   };
 
   const handleBack = () => {
-    if (currentStep === 3) {
+    if (currentStep === 4) {
+      setCurrentStep(3);
+    } else if (currentStep === 3) {
       setCurrentStep(2);
     } else if (currentStep === 2) {
       setCurrentStep(1);
@@ -86,101 +88,7 @@ export default function BookingDetails({ onBack }) {
 
   return (
     <div className="booking-details-shell">
-      <Sidebar active={active} onSelect={(k) => setActive(k)}/>
       <div className="booking-page-content">
-        <header className="booking-topbar">
-          <div className="booking-brand">
-            <div className="booking-brand-logo">🚗</div>
-            <div>
-              <div className="booking-brand-name">VehicleHub</div>
-              <div className="booking-brand-subtitle">Book your next ride in minutes</div>
-            </div>
-          </div>
-
-          <div className="booking-topbar-search-row">
-            <div className="booking-search-wrapper">
-              <div className="topbar-search">
-                <span>🔍</span>
-                <input
-                  type="text"
-                  aria-label="Search vehicles"
-                  placeholder="Search by vehicle name, city, Area, pincode..."
-                />
-              </div>
-              <button type="button" className="topbar-search-button">
-                Search
-              </button>
-
-              <div className="search-dropdown">
-                <div className="search-field">
-                  <span>🚗</span>
-                  <div>
-                    <label htmlFor="searchVehicle">Vehicle Name</label>
-                    <strong>
-                      <input
-                        id="searchVehicle"
-                        type="text"
-                        placeholder="Enter vehicle name"
-                      />
-                    </strong>
-                  </div>
-                </div>
-                <div className="search-field">
-                  <span>🏙️</span>
-                  <div>
-                    <label htmlFor="searchCity">City</label>
-                    <strong>
-                      <input
-                        id="searchCity"
-                        type="text"
-                        placeholder="Enter city"
-                      />
-                    </strong>
-                  </div>
-                </div>
-                <div className="search-field">
-                  <span>📍</span>
-                  <div>
-                    <label htmlFor="searchArea">Area</label>
-                    <strong>
-                      <input
-                        id="searchArea"
-                        type="text"
-                        placeholder="Enter area"
-                      />
-                    </strong>
-                  </div>
-                </div>
-                <div className="search-field">
-                  <span>📮</span>
-                  <div>
-                    <label htmlFor="searchPincode">Pincode</label>
-                    <strong>
-                      <input
-                        id="searchPincode"
-                        type="text"
-                        placeholder="Enter pincode"
-                      />
-                    </strong>
-                  </div>
-                </div>
-                <button type="button" className="search-button">
-                  Search Vehicles
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="booking-topbar-actions">
-            <button type="button" className="topbar-icon-button" aria-label="Notifications">
-              🔔
-            </button>
-            <button type="button" className="topbar-avatar-button" aria-label="Profile">
-              <img src={profilePlaceholder} alt="Customer profile" />
-            </button>
-          </div>
-        </header>
-
         <div className="booking-content">
           <div className="booking-page-header-row">
             <button type="button" className="back-link" onClick={handleBack}>
@@ -219,7 +127,9 @@ export default function BookingDetails({ onBack }) {
                     ? "Trip Details"
                     : currentStep === 2
                     ? "Booking Summary"
-                    : "Payment"}
+                    : currentStep === 3
+                    ? "Payment"
+                    : "Booking Confirmation"}
                 </h2>
               </div>
 

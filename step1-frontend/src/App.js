@@ -12,6 +12,8 @@ function App() {
   const [selectedRole, setSelectedRole] = useState("customer");
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState(false);
   const [pendingBookingRedirect, setPendingBookingRedirect] = useState(false);
+  const [bookingReferrer, setBookingReferrer] = useState(null);
+  const [showDashboardVehicleDetails, setShowDashboardVehicleDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState({
     name: "Hyundai i20",
     fuel: "Petrol",
@@ -38,7 +40,8 @@ function App() {
       setIsCustomerLoggedIn(true);
       if (pendingBookingRedirect) {
         setPendingBookingRedirect(false);
-        setCurrentPage("bookingDetails");
+        setShowDashboardVehicleDetails(true);
+        setCurrentPage("dashboard");
       } else {
         setCurrentPage("dashboard");
       }
@@ -48,6 +51,7 @@ function App() {
   const handleLogout = () => {
     setIsCustomerLoggedIn(false);
     setPendingBookingRedirect(false);
+    setShowDashboardVehicleDetails(false);
     setSelectedRole("customer");
     setCurrentPage("landing");
   };
@@ -97,9 +101,11 @@ function App() {
 
   const handleBookVehicle = () => {
     setShowLandingInline(false);
+    setBookingReferrer(currentPage);
 
     if (isCustomerLoggedIn) {
-      setCurrentPage("bookingDetails");
+      setShowDashboardVehicleDetails(true);
+      setCurrentPage("dashboard");
       return;
     }
 
@@ -118,7 +124,33 @@ function App() {
   }
 
   if (currentPage === "bookingDetails") {
-    return <BookingDetails onBack={() => setCurrentPage("landing")} />;
+    return (
+      <BookingDetails
+        onBack={(step) => {
+          // if user is on confirmation (step 4) go to dashboard
+          // if (step === 4) {
+          //   setCurrentPage("dashboard");
+          //   return;
+          // }
+
+          // if booking started from vehicle details, go back there
+          if (bookingReferrer === "vehicleDetails") {
+            setCurrentPage("vehicleDetails");
+            return;
+          }
+
+          // if booking started from landing and was inline, restore inline details
+          if (bookingReferrer === "landing") {
+            setCurrentPage("landing");
+            setShowLandingInline(true);
+            return;
+          }
+
+          // default: go to dashboard
+          setCurrentPage("dashboard");
+        }}
+      />
+    );
   }
 
   if (currentPage === "dashboard" && isCustomerLoggedIn) {
@@ -127,6 +159,9 @@ function App() {
         onLogout={handleLogout}
         onViewDetails={handleViewDetails}
         onBookVehicle={handleBookVehicle}
+        initialShowVehicleDetails={showDashboardVehicleDetails}
+        initialVehicle={selectedVehicle}
+        onVehicleDetailsClosed={() => setShowDashboardVehicleDetails(false)}
       />
     );
   }
@@ -140,18 +175,11 @@ function App() {
           setCurrentPage("register");
         }}
         onViewDetailsClick={handleLandingView}
+        showVehicleDetails={showLandingInline && Boolean(selectedVehicle)}
+        selectedVehicle={selectedVehicle}
+        onBackFromVehicleDetails={() => setShowLandingInline(false)}
+        onBookVehicle={handleBookVehicle}
       />
-
-      {showLandingInline && selectedVehicle && (
-        <div style={{ position: "relative", zIndex: 20 }}>
-          <ViewVehicleDetails
-            vehicle={selectedVehicle}
-            onBack={() => setShowLandingInline(false)}
-            onBookVehicle={handleBookVehicle}
-            showFooter={false}
-          />
-        </div>
-      )}
     </>
   );
 }

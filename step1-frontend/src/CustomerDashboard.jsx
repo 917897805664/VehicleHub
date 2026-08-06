@@ -1,14 +1,29 @@
 import React, { useState } from "react";
 import ViewVehicleDetails from "./ViewVehicleDetails";
+import BookingDetails from "./BookingDetails";
+import CustomerProfile from "./CustomerProfile";
 import Sidebar from "./Sidebar";
 import CustomerSidebarWishlist from "./CustomerSidebarWishlist";
 import carImage from "./assets/car_image.jpg";
 import profilePlaceholder from "./assets/profile_placeholder.svg";
 import "./index.css";
-export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle, onLogout }) {
+export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle, onLogout, initialShowVehicleDetails = false, initialVehicle = null, onVehicleDetailsClosed }) {
   const [active, setActive] = React.useState("dashboard");
   const [inlineVehicle, setInlineVehicle] = useState(null);
   const [showInlineDetails, setShowInlineDetails] = useState(false);
+  const [showInlineBooking, setShowInlineBooking] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+
+  React.useEffect(() => {
+    if (initialShowVehicleDetails && initialVehicle) {
+      setInlineVehicle(initialVehicle);
+      setShowInlineDetails(true);
+      setShowInlineBooking(false);
+      setShowProfile(false);
+      setActive("dashboard");
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  }, [initialShowVehicleDetails, initialVehicle]);
 
   const handleInlineView = (vehicle) => {
     setInlineVehicle(vehicle || null);
@@ -19,6 +34,34 @@ export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle
   const handleInlineBack = () => {
     setShowInlineDetails(false);
     setInlineVehicle(null);
+    if (typeof onVehicleDetailsClosed === "function") {
+      onVehicleDetailsClosed();
+    }
+  };
+
+  const handleSidebarSelect = (key) => {
+    setActive(key);
+    setShowInlineBooking(false);
+    setShowInlineDetails(false);
+    setInlineVehicle(null);
+    setShowProfile(key === "profile");
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  };
+
+  const handleOpenProfile = () => {
+    setActive("profile");
+    setShowProfile(true);
+    setShowInlineBooking(false);
+    setShowInlineDetails(false);
+    setInlineVehicle(null);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  };
+
+  const handleStartBooking = (vehicle) => {
+    // start booking inside the dashboard main area
+    setShowInlineDetails(false);
+    setShowInlineBooking(true);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
 
   const dashboardOffers = [
@@ -389,14 +432,69 @@ export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle
   const allVehicles = [...popularVehicles, ...recommendedVehicles];
   const likedVehicles = allVehicles.filter((vehicle) => likedVehicleNames.includes(vehicle.name));
 
+  const renderSectionCard = (title, subtitle, accent = "#0f7a34") => (
+    <div style={{ paddingTop: "24px" }}>
+      <section style={{ ...styles.panel, ...styles.fullWidthSection, background: "linear-gradient(135deg, #ffffff 0%, #f8fffb 100%)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "18px" }}>
+          <div style={{ width: "48px", height: "48px", borderRadius: "16px", background: accent + "22", color: accent, display: "grid", placeItems: "center", fontWeight: 800, fontSize: "22px" }}>
+            {title.charAt(0)}
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "22px", color: "#102a43" }}>{title}</h3>
+            <p style={{ margin: "6px 0 0", color: "#66758c" }}>{subtitle}</p>
+          </div>
+        </div>
+        <div style={{ background: "#f8fafc", border: "1px solid rgba(15, 23, 42, 0.05)", borderRadius: "18px", padding: "20px", color: "#334155" }}>
+          This section is now active in the main dashboard area. Content for this option can be expanded here as needed.
+        </div>
+      </section>
+    </div>
+  );
+
   const renderContent = () => {
+    if (showProfile) {
+      return (
+        <div style={{ paddingTop: "24px" }}>
+          <CustomerProfile />
+        </div>
+      );
+    }
+
+    if (showInlineBooking) {
+      return (
+        <div className="dashboard-inline-booking" style={{ paddingTop: "24px" }}>
+          <BookingDetails
+            onBack={(step) => {
+              // step === 1: go back to vehicle details view
+              if (step === 1) {
+                setShowInlineBooking(false);
+                setShowInlineDetails(true);
+                return;
+              }
+
+              // step === 4: go to main dashboard page
+              if (step === 4) {
+                setShowInlineBooking(false);
+                setActive("dashboard");
+                return;
+              }
+
+              // otherwise just hide booking view
+              setShowInlineBooking(false);
+            }}
+          />
+        </div>
+      );
+    }
+
     if (showInlineDetails && inlineVehicle) {
       return (
         <div style={{ paddingTop: "24px" }}>
           <ViewVehicleDetails
             vehicle={inlineVehicle}
             onBack={handleInlineBack}
-            onBookVehicle={onBookVehicle}
+            onBookVehicle={() => handleStartBooking(inlineVehicle)}
+            onViewProfile={handleOpenProfile}
             showFooter={false}
           />
         </div>
@@ -404,15 +502,24 @@ export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle
     }
     if (active === "wishlist") {
       return (
-        <div style={{ paddingTop: "24px" }}>
+        <div style={{ paddingTop: "85px" }}>
           <CustomerSidebarWishlist
             likedVehicles={likedVehicles}
-            onViewDetails={onViewDetails}
+            onViewDetails={handleInlineView}
             onToggleWishlist={handleToggleWishlist}
           />
         </div>
       );
     }
+
+    if (active === "search") return renderSectionCard("Search Vehicles", "Find vehicles by name, city, area, and pincode.", "#0ea5e9");
+    if (active === "bookings") return renderSectionCard("My Bookings", "Track your current and upcoming rides.", "#8b5cf6");
+    if (active === "offers") return renderSectionCard("Offers", "Explore the latest discounts and special deals.", "#f59e0b");
+    if (active === "notifications") return renderSectionCard("Notifications", "Review your latest alerts and reminders.", "#ef4444");
+    if (active === "messages") return renderSectionCard("Messages", "Stay connected with owners and support.", "#10b981");
+    if (active === "payments") return renderSectionCard("Payment History", "Review past payments and receipts.", "#6366f1");
+    if (active === "profile") return renderSectionCard("Profile", "Manage your personal details and preferences.", "#ec4899");
+    if (active === "help") return renderSectionCard("Help Center", "Need assistance? Check support and FAQs.", "#14b8a6");
 
     return (
       <>
@@ -567,7 +674,11 @@ export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle
 
   return (
     <div className="booking-details-shell">
-      <Sidebar active={active} onSelect={(k) => setActive(k)} onLogout={onLogout} />
+      <Sidebar
+        active={active}
+        onSelect={handleSidebarSelect}
+        onLogout={onLogout}
+      />
       <div className="booking-page-content">
         <header className="booking-topbar">
           <div className="booking-brand">
@@ -656,7 +767,7 @@ export default function CustomerDashboard({ onBack, onViewDetails, onBookVehicle
             <button type="button" className="topbar-icon-button" aria-label="Notifications">
               🔔
             </button>
-            <button type="button" className="topbar-avatar-button" aria-label="Profile">
+            <button type="button" className="topbar-avatar-button" aria-label="Profile" onClick={handleOpenProfile}>
               <img src={profilePlaceholder} alt="Customer profile" />
             </button>
           </div>
