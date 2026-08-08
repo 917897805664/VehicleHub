@@ -20,9 +20,10 @@ C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehicle
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\repository\CustomerRepository.java
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\entity\Customer.java
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\dto\vehicleownerdtolayer\AddVehicleRequest.java
-C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\config\VehicleDetailsSchemaInitializer.java
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\dto\ApiResponse.java
+C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\entity\vehicleownerentities\VehicleFeatures.java
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\repository\vehicleownerrepositories\VehicleDetailsRepository.java
+C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\repository\vehicleownerrepositories\VehicleFeaturesRepository.java
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\dto\ResetPasswordRequest.java
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\repository\VehicleOwnerRepository.java
 C:\Users\Om\Downloads\step1-registration\step1-backend\src\main\java\com\vehiclerental\backend\entity\Admin.java

@@ -1,6 +1,7 @@
+
 package com.vehiclerental.backend.dto.vehicleownerdtolayer;
 
-
+import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -46,8 +47,7 @@ public class AddVehicleRequest {
     private Double mileage;
 
     private String description;
-   
 
-
-     
+    private Set<String> features;
 }
+

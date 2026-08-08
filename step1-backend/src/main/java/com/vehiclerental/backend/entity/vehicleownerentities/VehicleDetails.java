@@ -1,24 +1,28 @@
 package com.vehiclerental.backend.entity.vehicleownerentities;
 
+import java.util.ArrayList;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-
-
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="vehicle_details")
+@Table(name = "vehicle_details")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class VehicleDetails {
 
     @Id
@@ -26,23 +30,37 @@ public class VehicleDetails {
     private Long id;
 
     private String vehicleName;
+
     private String vehicleType;
+
     private String brand;
+
     private String model;
+
     private String manufacturingYear;
+
     private String vehicleNo;
+
     private String fuelType;
+
     private String transmission;
+
     private String engineCapacity;
+
     private String color;
+
     private String seatingCapacity;
+
     private Double mileage;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-   
- 
 
-
-
-    
+    @OneToMany(
+        mappedBy = "vehicle",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    @JsonManagedReference
+    private List<VehicleFeatures> features = new ArrayList<>();
 }
