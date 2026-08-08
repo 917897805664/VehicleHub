@@ -1226,33 +1226,7 @@ export default function AddVehicle({ onBack }) {
                     </div>
                   </div>
 
-                  <div className="form-grid-2">
-                    <div className="form-field">
-                      <label htmlFor="extraKm">Extra KM Charges (₹/km)</label>
-                      <input
-                        id="extraKm"
-                        name="extraKm"
-                        type="number"
-                        min="0"
-                        value={pricingData.extraKm}
-                        onChange={handlePricingChange}
-                        placeholder="e.g. 12"
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="freeKmPerDay">Free KM per day (km)</label>
-                      <input
-                        id="freeKmPerDay"
-                        name="freeKmPerDay"
-                        type="number"
-                        min="0"
-                        value={pricingData.freeKmPerDay}
-                        onChange={handlePricingChange}
-                        placeholder="e.g. 100"
-                      />
-                    </div>
-                  </div>
-                </div>
+                </div>  
 
                 <div className="sub-card">
                   <div className="card-header">
