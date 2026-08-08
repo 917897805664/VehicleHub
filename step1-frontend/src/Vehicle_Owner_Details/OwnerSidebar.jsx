@@ -49,7 +49,7 @@ export default function OwnerSidebar({ active = "dashboard", onSelect = () => {}
           <div className="footer-title">Grow Your Business</div>
           <div className="footer-text">List more vehicles and earn more with RentWheels.</div>
         </div>
-        <button className="footer-button">Add Vehicle Now</button>
+        <button className="footer-button" onClick={() => onSelect("addVehicle")}>Add Vehicle Now</button>
       </div>
 
       <button className="owner-sidebar-logout" onClick={onLogout}>

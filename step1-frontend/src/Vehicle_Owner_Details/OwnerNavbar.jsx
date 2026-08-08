@@ -1,6 +1,6 @@
 import React from "react";
 import profilePlaceholder from "../assets/profile_icon.jpg";
-export default function OwnerNavbar({ userName, notificationCount = 0 }) {
+export default function OwnerNavbar({ userName, notificationCount = 0, onAddVehicle }) {
   return (
     <header className="owner-navbar">
       <div className="booking-brand">
@@ -23,7 +23,7 @@ export default function OwnerNavbar({ userName, notificationCount = 0 }) {
         </button>
 
       <div className="navbar-right">
-        <button className="navbar-action-btn">Add Vehicle</button>
+        <button type="button" className="navbar-action-btn" onClick={onAddVehicle}>Add Vehicle</button>
            <div className="booking-topbar-actions">
                 <button type="button" className="topbar-icon-button" aria-label="Notifications">
                       🔔
