@@ -1,4 +1,3 @@
-
 package com.vehiclerental.backend.repository.vehicleownerrepositories;
 
 import java.util.List;
@@ -12,4 +11,7 @@ public interface VehicleFeaturesRepository
         extends JpaRepository<VehicleFeatures, Long> {
 
     List<VehicleFeatures> findByVehicle(VehicleDetails vehicle);
+
+    void deleteByVehicle(VehicleDetails vehicle);
+    
 }

@@ -1,5 +1,15 @@
 import React, { useMemo, useState } from "react";
 
+const API_BASE_URL = "http://localhost:8080/api/vehicle-owners/vehicles";
+
+// Backend endpoints used by the four Add Vehicle steps.
+const API_ENDPOINTS = {
+  addVehicle: `${API_BASE_URL}/addVehicle`,
+  media: (vehicleId) => `${API_BASE_URL}/${vehicleId}/media`,
+  documents: (vehicleId) => `${API_BASE_URL}/${vehicleId}/documents`,
+  pricing: (vehicleId) => `${API_BASE_URL}/${vehicleId}/pricing`,
+};
+
 const typeOptions = [
   "Two Wheeler",
   "Four Wheeler",
@@ -308,11 +318,18 @@ export default function AddVehicle({ onBack }) {
     features: {},
   });
 
-  const [photos, setPhotos] = useState([]);
-  const [additionalPhotos, setAdditionalPhotos] = useState([]);
-  const [videos, setVideos] = useState([]);
+  // Step 1 creates the vehicle first. The generated ID is then used by
+  // Steps 2, 3 and 4 to save child records against the same vehicle.
+  const [vehicleId, setVehicleId] = useState(null);
+
+  // Every selected media item keeps its file + the UI position/type.
+  // Example: { file, mediaType: "PHOTO", viewType: "FRONT_VIEW" }
+  const [mediaFiles, setMediaFiles] = useState([]);
+
   const [rcBookDocument, setRcBookDocument] = useState(null);
   const [insuranceDocument, setInsuranceDocument] = useState(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [pricingData, setPricingData] = useState({
     hourlyRent: "",
@@ -377,18 +394,107 @@ export default function AddVehicle({ onBack }) {
     }));
   };
 
-  const handlePhotoUpload = (event, setter) => {
-    const files = Array.from(event.target.files || []);
-    setter(files);
+  /*
+   * ============================================================
+   * COMMON API HELPERS
+   * ============================================================
+   */
+
+  const readApiResponse = async (response) => {
+    const text = await response.text();
+
+    if (!text) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.warn("Backend returned non-JSON response:", text);
+      return { message: text };
+    }
   };
+
+  const getVehicleIdFromResponse = (result) => {
+    // Expected response:
+    // {
+    //   success: true,
+    //   message: "...",
+    //   data: { id: 1, ... }
+    // }
+    return (
+      result?.data?.id ??
+      result?.data?.vehicleId ??
+      result?.vehicleId ??
+      result?.id ??
+      null
+    );
+  };
+
+  /*
+   * ============================================================
+   * STEP 2 - PHOTOS & VIDEOS
+   * ============================================================
+   */
+
+  const handleMediaUpload = (event, viewType, mediaType = "PHOTO") => {
+    const files = Array.from(event.target.files || []);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const acceptedType =
+      mediaType === "VIDEO" ? "video/" : "image/";
+
+    const invalidFile = files.find(
+      (file) => !file.type.startsWith(acceptedType)
+    );
+
+    if (invalidFile) {
+      alert(
+        mediaType === "VIDEO"
+          ? "Please upload video files only."
+          : "Please upload image files only."
+      );
+      event.target.value = "";
+      return;
+    }
+
+    const newMedia = files.map((file) => ({
+      file,
+      mediaType,
+      viewType,
+    }));
+
+    setMediaFiles((prev) => [...prev, ...newMedia]);
+
+    // Allow selecting the same file again later.
+    event.target.value = "";
+  };
+
+  const removeMediaFile = (index) => {
+    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /*
+   * ============================================================
+   * STEP 3 - DOCUMENTS
+   * ============================================================
+   */
 
   const validateDocument = (file) => {
     if (!file) {
       return false;
     }
 
-    const allowedTypes = ["application/pdf", "image/png", "image/jpeg"];
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+    ];
+
+    const maxSize = 5 * 1024 * 1024; // 5 MB
 
     if (!allowedTypes.includes(file.type)) {
       alert("Please upload PDF, PNG, or JPG files only.");
@@ -405,12 +511,13 @@ export default function AddVehicle({ onBack }) {
 
   const handleDocumentUpload = (event, setter) => {
     const file = event.target.files?.[0];
+
     if (!file) {
       return;
     }
 
     if (!validateDocument(file)) {
-      event.target.value = null;
+      event.target.value = "";
       setter(null);
       return;
     }
@@ -418,15 +525,51 @@ export default function AddVehicle({ onBack }) {
     setter(file);
   };
 
+  /*
+   * ============================================================
+   * STEP NAVIGATION
+   * ============================================================
+   */
+
   const handleStepClick = (step) => {
-    setCurrentStep(step);
+    // Do not allow the user to jump to a step whose previous
+    // data has not been saved.
+    if (step <= currentStep) {
+      setCurrentStep(step);
+    }
   };
+
+  const handleBackButton = () => {
+    if (currentStep > 1) {
+      setCurrentStep((prev) => prev - 1);
+      return;
+    }
+
+    onBack();
+  };
+
+  /*
+   * ============================================================
+   * MAIN SAVE & CONTINUE HANDLER
+   * ============================================================
+   *
+   * Step 1 -> POST vehicle + features -> receives vehicle ID
+   * Step 2 -> POST photos/videos using vehicle ID
+   * Step 3 -> POST RC + insurance using vehicle ID
+   * Step 4 -> POST pricing/charges using vehicle ID
+   */
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (currentStep === 1) {
+    if (isSubmitting) {
+      return;
+    }
 
+    // ============================================================
+    // STEP 1 - SAVE VEHICLE DETAILS + FEATURES
+    // ============================================================
+    if (currentStep === 1) {
       const form = event.currentTarget;
 
       if (!form.checkValidity()) {
@@ -434,167 +577,306 @@ export default function AddVehicle({ onBack }) {
         return;
       }
 
-      /*
-       * =====================================================
-       * GET SELECTED VEHICLE FEATURES
-       * =====================================================
-       *
-       * formData.features is stored like:
-       *
-       * {
-       *     "ABS": true,
-       *     "Air Conditioning": true,
-       *     "GPS Navigation": false
-       * }
-       *
-       * We convert only the selected features into an array.
-       */
-
       const selectedFeatures = Object.keys(formData.features)
         .filter((feature) => formData.features[feature]);
 
-      /*
-       * =====================================================
-       * VEHICLE + FEATURES PAYLOAD
-       * =====================================================
-       */
-
       const payload = {
-
+        // null on first save -> INSERT
+        // existing ID on re-save -> UPDATE same vehicle
+        vehicleId: vehicleId || null,
         vehicleName: formData.vehicleName,
-
         vehicleType: formData.type,
-
         brand: formData.brand,
-
         model: formData.model,
-
         manufacturingYear: formData.year,
-
         vehicleNo: formData.registration,
-
         fuelType: formData.fuel,
-
         transmission: formData.transmission,
-
         engineCapacity: formData.capacity,
-
         color: formData.color,
-
         seatingCapacity: formData.seating,
-
         mileage: Number(formData.mileage),
-
         description: formData.description,
-
-        features: selectedFeatures
-
+        features: selectedFeatures,
       };
 
-      console.log("Vehicle + Features Payload:");
-      console.log(payload);
+      console.log("STEP 1 payload:", payload);
+      setIsSubmitting(true);
 
       try {
+        const response = await fetch(API_ENDPOINTS.addVehicle, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
 
-        const response = await fetch(
-          "http://localhost:8080/api/vehicle-owners/vehicles/addVehicle",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-          }
-        );
+        const result = await readApiResponse(response);
+        console.log("STEP 1 response:", result);
 
-        let result = null;
-        try {
-          result = await response.json();
-        } catch (parseError) {
-          console.warn("Could not parse backend response as JSON:", parseError);
+        if (!response.ok) {
+          alert(
+            result?.message ||
+              `Vehicle details could not be saved. HTTP ${response.status}`
+          );
+          return;
         }
 
-        console.log("Backend Response:");
-        console.log(result);
+        const savedVehicleId = getVehicleIdFromResponse(result);
 
-        if (response.ok) {
-          alert("Vehicle and Features Added Successfully");
-          setCurrentStep(2);
-        } else {
-          alert((result && result.message) || "Vehicle could not be added.");
+        if (!savedVehicleId) {
+          console.error("Backend response does not contain vehicleId:", result);
+          alert(
+            "Step 1 was processed, but the backend did not return vehicleId. " +
+              "Check the browser Console and Spring Boot response."
+          );
+          return;
         }
 
+        setVehicleId(savedVehicleId);
+        alert(`Step 1 saved successfully. Vehicle ID: ${savedVehicleId}`);
+        setCurrentStep(2);
       } catch (error) {
-        console.error(error);
-        alert("Server Error");
+        console.error("STEP 1 error:", error);
+        alert(
+          "Server Error while saving Step 1. Check that Spring Boot is running on port 8080."
+        );
+      } finally {
+        setIsSubmitting(false);
       }
 
       return;
     }
 
+    // ============================================================
+    // STEP 2 - SAVE PHOTOS + VIDEOS
+    // ============================================================
     if (currentStep === 2) {
-      if (photos.length === 0 && additionalPhotos.length === 0 && videos.length === 0) {
+      if (!vehicleId) {
+        alert("Vehicle ID is missing. Please save Step 1 first.");
+        setCurrentStep(1);
+        return;
+      }
+
+      if (mediaFiles.length === 0) {
         alert("Please upload at least one photo or video before continuing.");
         return;
       }
 
-      console.log("Photos:", photos);
-      console.log("Additional Photos:", additionalPhotos);
-      console.log("Videos:", videos);
+      const multipartData = new FormData();
 
-      alert("Photos & Videos saved successfully.");
-      setCurrentStep(3);
+      mediaFiles.forEach((item) => {
+        multipartData.append("files", item.file);
+        // Must match @RequestParam("mediaTypes") in controller.
+        multipartData.append("mediaTypes", item.mediaType);
+        // Must match @RequestParam("viewTypes") in controller.
+        multipartData.append("viewTypes", item.viewType);
+      });
+
+      console.log("STEP 2 vehicleId:", vehicleId, mediaFiles);
+      setIsSubmitting(true);
+
+      try {
+        const response = await fetch(API_ENDPOINTS.media(vehicleId), {
+          method: "POST",
+          body: multipartData,
+        });
+
+        const result = await readApiResponse(response);
+        console.log("STEP 2 response:", result);
+
+        if (!response.ok) {
+          alert(
+            result?.message ||
+              `Photos/Videos could not be saved. HTTP ${response.status}`
+          );
+          return;
+        }
+
+        alert(
+          `Step 2 saved successfully. Files: ${
+            result?.data?.uploadedFiles ?? "saved"
+          }`
+        );
+        setCurrentStep(3);
+      } catch (error) {
+        console.error("STEP 2 error:", error);
+        alert(
+          "Server Error while saving Step 2. Check the media upload API."
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+
       return;
     }
 
+    // ============================================================
+    // STEP 3 - SAVE RC BOOK + INSURANCE
+    // ============================================================
     if (currentStep === 3) {
+      if (!vehicleId) {
+        alert("Vehicle ID is missing. Please save Step 1 first.");
+        setCurrentStep(1);
+        return;
+      }
+
       if (!rcBookDocument) {
-        alert("Please upload the RC Book document (PDF, PNG, or JPG). The RC Book can be a single PDF containing both sides.");
+        alert("Please upload the RC Book document (PDF, PNG, or JPG).");
         return;
       }
 
       if (!insuranceDocument) {
-        alert("Please upload the Insurance document (PDF, PNG, or JPG). The file size must be 5MB or less.");
+        alert("Please upload the Insurance document (PDF, PNG, or JPG).");
         return;
       }
 
-      if (!validateDocument(rcBookDocument) || !validateDocument(insuranceDocument)) {
+      if (
+        !validateDocument(rcBookDocument) ||
+        !validateDocument(insuranceDocument)
+      ) {
         return;
       }
 
-      console.log("RC Book Document:", rcBookDocument);
-      console.log("Insurance Document:", insuranceDocument);
+      const documentData = new FormData();
+      documentData.append("files", rcBookDocument);
+      documentData.append("documentTypes", "RC_BOOK");
+      documentData.append("files", insuranceDocument);
+      documentData.append("documentTypes", "INSURANCE");
 
-      alert("Documents saved successfully.");
-      setCurrentStep(4);
+      console.log("STEP 3 vehicleId:", vehicleId);
+      setIsSubmitting(true);
+
+      try {
+        const response = await fetch(API_ENDPOINTS.documents(vehicleId), {
+          method: "POST",
+          body: documentData,
+        });
+
+        const result = await readApiResponse(response);
+        console.log("STEP 3 response:", result);
+
+        if (!response.ok) {
+          alert(
+            result?.message ||
+              `Documents could not be saved. HTTP ${response.status}`
+          );
+          return;
+        }
+
+        alert(
+          `Step 3 saved successfully. Documents: ${
+            result?.data?.uploadedDocuments ?? "saved"
+          }`
+        );
+        setCurrentStep(4);
+      } catch (error) {
+        console.error("STEP 3 error:", error);
+        alert(
+          "Server Error while saving Step 3. Check the document upload API."
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+
       return;
     }
 
+    // ============================================================
+    // STEP 4 - SAVE ALL RENT RATES + CHARGES
+    // ============================================================
     if (currentStep === 4) {
-      alert("Pricing & Charges saved successfully.");
-      console.log("Pricing Data:", pricingData);
-      return;
+      const form = event.currentTarget;
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      if (!vehicleId) {
+        alert("Vehicle ID is missing. Please save Step 1 first.");
+        setCurrentStep(1);
+        return;
+      }
+
+      // IMPORTANT:
+      // This is an OBJECT because the backend VehiclePricingRequest
+      // receives the complete Step 4 form and converts every value into
+      // one row of vehicle_charges.
+      const pricingPayload = {
+        hourlyRent: pricingData.hourlyRent === "" ? null : Number(pricingData.hourlyRent),
+        dailyRent: Number(pricingData.dailyRent || 0),
+        weeklyRent: pricingData.weeklyRent === "" ? null : Number(pricingData.weeklyRent),
+        monthlyRent: pricingData.monthlyRent === "" ? null : Number(pricingData.monthlyRent),
+
+        extraKm: pricingData.extraKm === "" ? null : Number(pricingData.extraKm),
+        freeKmPerDay: pricingData.freeKmPerDay === "" ? null : Number(pricingData.freeKmPerDay),
+
+        securityDeposit: pricingData.securityDeposit === "" ? null : Number(pricingData.securityDeposit),
+        cleaningCharges: pricingData.cleaningCharges === "" ? null : Number(pricingData.cleaningCharges),
+        lateReturnCharges: pricingData.lateReturnCharges === "" ? null : Number(pricingData.lateReturnCharges),
+        cancellationCharges: pricingData.cancellationCharges === "" ? null : Number(pricingData.cancellationCharges),
+
+        driverCharges: pricingData.driverCharges === "" ? null : Number(pricingData.driverCharges),
+        homeDeliveryCharges: pricingData.homeDeliveryCharges === "" ? null : Number(pricingData.homeDeliveryCharges),
+        pickUpCharges: pricingData.pickUpCharges === "" ? null : Number(pricingData.pickUpCharges),
+        tollCharges: pricingData.tollCharges === "" ? null : Number(pricingData.tollCharges),
+        parkingCharges: pricingData.parkingCharges === "" ? null : Number(pricingData.parkingCharges),
+        nightCharges: pricingData.nightCharges === "" ? null : Number(pricingData.nightCharges),
+
+        enableDriverCharges: pricingData.enableDriverCharges,
+        enableHomeDeliveryCharges: pricingData.enableHomeDeliveryCharges,
+        enablePickUpCharges: pricingData.enablePickUpCharges,
+        enableTollCharges: pricingData.enableTollCharges,
+        enableParkingCharges: pricingData.enableParkingCharges,
+        enableNightCharges: pricingData.enableNightCharges,
+      };
+
+      console.log("STEP 4 vehicleId:", vehicleId);
+      console.log("STEP 4 pricing payload:", pricingPayload);
+      setIsSubmitting(true);
+
+      try {
+        const response = await fetch(API_ENDPOINTS.pricing(vehicleId), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(pricingPayload),
+        });
+
+        const result = await readApiResponse(response);
+        console.log("STEP 4 response:", result);
+
+        if (!response.ok) {
+          alert(
+            result?.message ||
+              `Pricing & Charges could not be saved. HTTP ${response.status}`
+          );
+          return;
+        }
+
+        alert(
+          `Vehicle added successfully!\nVehicle ID: ${vehicleId}\nCharges saved: ${
+            result?.data?.savedCharges ?? "saved"
+          }`
+        );
+
+        console.log("ALL 4 STEPS COMPLETED:", vehicleId);
+
+        // Vehicle is now completely configured.
+        // Return to the owner dashboard/list after successful final save.
+        onBack();
+      } catch (error) {
+        console.error("STEP 4 error:", error);
+        alert(
+          "Server Error while saving Step 4. Check the pricing API."
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
     }
-
-    if (!rcBookDocument) {
-      alert("Please upload the RC Book document (PDF, PNG, or JPG). The RC Book can be a single PDF containing both sides.");
-      return;
-    }
-
-    if (!insuranceDocument) {
-      alert("Please upload the Insurance document (PDF, PNG, or JPG). The file size must be 5MB or less.");
-      return;
-    }
-
-    if (!validateDocument(rcBookDocument) || !validateDocument(insuranceDocument)) {
-      return;
-    }
-
-    console.log("RC Book Document:", rcBookDocument);
-    console.log("Insurance Document:", insuranceDocument);
-
-    alert("Documents saved successfully.");
-
   };
 
   return (
@@ -607,6 +889,12 @@ export default function AddVehicle({ onBack }) {
         <div>
           <h2 className="add-vehicle-title">Add Vehicle</h2>
           <p className="add-vehicle-subtitle">Fill in the vehicle details to list it on RentRide.</p>
+
+          {vehicleId && (
+            <p className="add-vehicle-subtitle">
+              Vehicle ID: <strong>{vehicleId}</strong>
+            </p>
+          )}
         </div>
       </div>
 
@@ -621,8 +909,11 @@ export default function AddVehicle({ onBack }) {
           <button
             type="button"
             key={item.step}
-            className={`add-vehicle-step ${item.step === currentStep ? "active" : ""}`}
+            className={`add-vehicle-step ${item.step === currentStep ? "active" : ""} ${
+              item.step > currentStep ? "disabled-step" : ""
+            }`}
             onClick={() => handleStepClick(item.step)}
+            disabled={item.step > currentStep}
           >
             <div className="step-number">{item.step}</div>
             <span>{item.label}</span>
@@ -967,7 +1258,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setPhotos)}
+                    onChange={(e) => handleMediaUpload(e, "FRONT_VIEW", "PHOTO")}
                   />
                 </label>
 
@@ -980,7 +1271,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setAdditionalPhotos)}
+                    onChange={(e) => handleMediaUpload(e, "BACK_VIEW", "PHOTO")}
                   />
                 </label>
 
@@ -993,7 +1284,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setPhotos)}
+                    onChange={(e) => handleMediaUpload(e, "LEFT_SIDE", "PHOTO")}
                   />
                 </label>
 
@@ -1006,7 +1297,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setPhotos)}
+                    onChange={(e) => handleMediaUpload(e, "RIGHT_SIDE", "PHOTO")}
                   />
                 </label>
 
@@ -1023,7 +1314,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setPhotos)}
+                    onChange={(e) => handleMediaUpload(e, "INTERIOR", "PHOTO")}
                   />
                 </label>
 
@@ -1036,7 +1327,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setAdditionalPhotos)}
+                    onChange={(e) => handleMediaUpload(e, "DASHBOARD", "PHOTO")}
                   />
                 </label>
 
@@ -1049,7 +1340,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setAdditionalPhotos)}
+                    onChange={(e) => handleMediaUpload(e, "BOOT_SPACE", "PHOTO")}
                   />
                 </label>
 
@@ -1062,7 +1353,7 @@ export default function AddVehicle({ onBack }) {
                     type="file"
                     accept="video/*"
                     multiple
-                    onChange={(e) => handlePhotoUpload(e, setVideos)}
+                    onChange={(e) => handleMediaUpload(e, "ENGINE_VIDEO", "VIDEO")}
                   />
                 </label>
 
@@ -1078,10 +1369,35 @@ export default function AddVehicle({ onBack }) {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => handlePhotoUpload(e, setPhotos)}
+                  onChange={(e) => handleMediaUpload(e, "ADDITIONAL_PHOTO", "PHOTO")}
                 />
 
               </label>
+
+              {mediaFiles.length > 0 && (
+                <div className="selected-media-list">
+                  <h4>Selected Files ({mediaFiles.length})</h4>
+
+                  {mediaFiles.map((item, index) => (
+                    <div
+                      key={`${item.file.name}-${index}`}
+                      className="selected-media-item"
+                    >
+                      <span>
+                        {item.viewType.replaceAll("_", " ")} -{" "}
+                        {item.file.name}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => removeMediaFile(index)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
             </section>
 
@@ -1125,6 +1441,25 @@ export default function AddVehicle({ onBack }) {
                 </label>
 
               </div>
+
+              {(rcBookDocument || insuranceDocument) && (
+                <div className="selected-media-list">
+                  <h4>Selected Documents</h4>
+
+                  {rcBookDocument && (
+                    <div className="selected-media-item">
+                      <span>RC BOOK - {rcBookDocument.name}</span>
+                    </div>
+                  )}
+
+                  {insuranceDocument && (
+                    <div className="selected-media-item">
+                      <span>INSURANCE - {insuranceDocument.name}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
                <section className="add-vehicle-card document-guidelines-panel">
               <div className="card-header">
                 <h3>Important Guidelines</h3>
@@ -1407,17 +1742,21 @@ export default function AddVehicle({ onBack }) {
             <button
               type="button"
               className="secondary-button"
-              onClick={() => setCurrentStep(currentStep === 3 ? 2 : 1)}
+              onClick={handleBackButton}
             >
               Back
             </button>
 
           )}
 
-          <button type="submit" className="primary-button">
-
-            {currentStep === 1 ? "Save & Continue" : currentStep === 2 ? "Save & Continue" : "save & Continue"}
-
+          <button
+            type="submit"
+            className="primary-button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? "Saving..."
+              : "Save & Continue"}
           </button>
 
         </div>

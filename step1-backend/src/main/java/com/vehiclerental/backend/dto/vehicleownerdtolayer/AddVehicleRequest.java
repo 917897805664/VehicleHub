@@ -1,4 +1,3 @@
-
 package com.vehiclerental.backend.dto.vehicleownerdtolayer;
 
 import java.util.Set;
@@ -9,6 +8,10 @@ import lombok.Data;
 
 @Data
 public class AddVehicleRequest {
+
+    // null = create new vehicle
+    // existing ID = update same vehicle
+    private Long vehicleId;
 
     @NotBlank
     private String vehicleName;
@@ -49,5 +52,5 @@ public class AddVehicleRequest {
     private String description;
 
     private Set<String> features;
+    
 }
-
