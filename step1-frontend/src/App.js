@@ -15,6 +15,7 @@ function App() {
   const [isOwnerLoggedIn, setIsOwnerLoggedIn] = useState(false);
   const [pendingBookingRedirect, setPendingBookingRedirect] = useState(false);
   const [bookingReferrer, setBookingReferrer] = useState(null);
+  const [loggedInOwner, setLoggedInOwner] = useState(null);
   const [showDashboardVehicleDetails, setShowDashboardVehicleDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState({
     name: "Hyundai i20",
@@ -37,10 +38,12 @@ function App() {
     },
   });
 
-  const handleLoginSuccess = (role) => {
+  const handleLoginSuccess = (role, loggedUser) => {
     if (role === "customer") {
       setIsCustomerLoggedIn(true);
       setIsOwnerLoggedIn(false);
+      setLoggedInOwner(null);
+
       if (pendingBookingRedirect) {
         setPendingBookingRedirect(false);
         setShowDashboardVehicleDetails(true);
@@ -52,6 +55,7 @@ function App() {
     }
 
     if (role === "vehicleOwner") {
+      setLoggedInOwner(loggedUser || null);
       setIsOwnerLoggedIn(true);
       setIsCustomerLoggedIn(false);
       setCurrentPage("ownerDashboard");
@@ -61,6 +65,7 @@ function App() {
   const handleLogout = () => {
     setIsCustomerLoggedIn(false);
     setIsOwnerLoggedIn(false);
+    setLoggedInOwner(null);
     setPendingBookingRedirect(false);
     setShowDashboardVehicleDetails(false);
     setSelectedRole("customer");
@@ -74,7 +79,6 @@ function App() {
     setCurrentPage("vehicleDetails");
   };
 
-  // Landing inline details state
   const [showLandingInline, setShowLandingInline] = useState(false);
 
   const handleLandingView = (vehicleData) => {
@@ -138,26 +142,17 @@ function App() {
     return (
       <BookingDetails
         onBack={(step) => {
-          // if user is on confirmation (step 4) go to dashboard
-          // if (step === 4) {
-          //   setCurrentPage("dashboard");
-          //   return;
-          // }
-
-          // if booking started from vehicle details, go back there
           if (bookingReferrer === "vehicleDetails") {
             setCurrentPage("vehicleDetails");
             return;
           }
 
-          // if booking started from landing and was inline, restore inline details
           if (bookingReferrer === "landing") {
             setCurrentPage("landing");
             setShowLandingInline(true);
             return;
           }
 
-          // default: go to dashboard
           setCurrentPage("dashboard");
         }}
       />
@@ -178,7 +173,7 @@ function App() {
   }
 
   if (currentPage === "ownerDashboard" && isOwnerLoggedIn) {
-    return <VehicleOwnerDashboard onLogout={handleLogout} />;
+    return <VehicleOwnerDashboard owner={loggedInOwner} onLogout={handleLogout} />;
   }
 
   return (

@@ -1,25 +1,37 @@
 package com.vehiclerental.backend.service.vehicleownerservices;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.AddVehicleRequest;
+import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleChargeCatalogResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleChargeResponse;
+import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleDocumentCatalogResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleDocumentResponse;
+import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleFeatureCatalogResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleIdResponse;
+import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleMediaCatalogResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleMediaResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehiclePricingRequest;
+import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleCatalogResponse;
+import com.vehiclerental.backend.entity.VehicleOwner;
 import com.vehiclerental.backend.entity.vehicleownerentities.VehicleCharges;
 import com.vehiclerental.backend.entity.vehicleownerentities.VehicleDetails;
 import com.vehiclerental.backend.entity.vehicleownerentities.VehicleDocuments;
 import com.vehiclerental.backend.entity.vehicleownerentities.VehicleFeatures;
 import com.vehiclerental.backend.entity.vehicleownerentities.VehicleMedia;
+import com.vehiclerental.backend.repository.VehicleOwnerRepository;
 import com.vehiclerental.backend.repository.vehicleownerrepositories.VehicleChargesRepository;
 import com.vehiclerental.backend.repository.vehicleownerrepositories.VehicleDetailsRepository;
 import com.vehiclerental.backend.repository.vehicleownerrepositories.VehicleDocumentsRepository;
@@ -30,29 +42,52 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class VehicleDetailsService {
 
     private final VehicleDetailsRepository vehicleDetailsRepository;
+
+    private final VehicleOwnerRepository vehicleOwnerRepository;
+
     private final VehicleFeaturesRepository vehicleFeaturesRepository;
+
     private final VehicleMediaRepository vehicleMediaRepository;
+
     private final VehicleDocumentsRepository vehicleDocumentsRepository;
+
     private final VehicleChargesRepository vehicleChargesRepository;
+
 
     // =========================================================
     // STEP 1
+    // ADD / UPDATE VEHICLE
     // =========================================================
 
-    @Transactional
     public VehicleIdResponse addVehicle(AddVehicleRequest request) {
 
         VehicleDetails vehicle;
 
-        // Existing vehicle = UPDATE
-        // No vehicle ID = INSERT
         if (request.getVehicleId() != null) {
-            vehicle = getVehicle(request.getVehicleId());
+
+            vehicle = vehicleDetailsRepository
+                    .findById(request.getVehicleId())
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Vehicle not found with ID: "
+                                            + request.getVehicleId()
+                            )
+                    );
+
         } else {
+
             vehicle = new VehicleDetails();
+        }
+
+
+        if (request.getOwnerId() != null) {
+            VehicleOwner owner = vehicleOwnerRepository.findById(request.getOwnerId())
+                    .orElseThrow(() -> new RuntimeException("Owner not found with ID: " + request.getOwnerId()));
+            vehicle.setOwner(owner);
         }
 
         vehicle.setVehicleName(request.getVehicleName());
@@ -67,120 +102,101 @@ public class VehicleDetailsService {
         vehicle.setColor(request.getColor());
         vehicle.setSeatingCapacity(request.getSeatingCapacity());
         vehicle.setMileage(request.getMileage());
+        vehicle.setDescription(request.getDescription());
 
-        vehicle.setDescription(
-                request.getDescription() == null
-                        ? ""
-                        : request.getDescription().trim()
-        );
 
         VehicleDetails savedVehicle =
-                vehicleDetailsRepository.saveAndFlush(vehicle);
+                vehicleDetailsRepository.save(vehicle);
 
-        // Remove old features if Step 1 is submitted again.
-        vehicleFeaturesRepository.deleteByVehicle(savedVehicle);
 
-        if (request.getFeatures() != null &&
-                !request.getFeatures().isEmpty()) {
+        // =====================================================
+        // FEATURES
+        // =====================================================
 
-            Set<String> uniqueFeatures =
-                    new HashSet<>(request.getFeatures());
+        if (request.getFeatures() != null) {
 
-            for (String feature : uniqueFeatures) {
+            vehicleFeaturesRepository
+                    .deleteByVehicle(savedVehicle);
 
-                if (feature == null ||
-                        feature.trim().isEmpty()) {
+            Set<String> features =
+                    request.getFeatures();
+
+            for (String featureName : features) {
+
+                if (featureName == null ||
+                        featureName.trim().isEmpty()) {
+
                     continue;
                 }
 
-                VehicleFeatures vehicleFeature =
+                VehicleFeatures feature =
                         new VehicleFeatures();
 
-                vehicleFeature.setFeatureName(
-                        feature.trim()
+                feature.setFeatureName(
+                        featureName.trim()
                 );
 
-                vehicleFeature.setVehicle(
+                feature.setVehicle(
                         savedVehicle
                 );
 
                 vehicleFeaturesRepository.save(
-                        vehicleFeature
+                        feature
                 );
             }
         }
+
 
         return new VehicleIdResponse(
                 savedVehicle.getId()
         );
     }
 
+
     // =========================================================
     // STEP 2
-    // PHOTOS + VIDEOS
+    // SAVE VEHICLE MEDIA
     // =========================================================
 
-    @Transactional
     public VehicleMediaResponse saveVehicleMedia(
             Long vehicleId,
             List<MultipartFile> files,
-            List<String> categories,
-            List<String> mediaTypes)
-            throws IOException {
+            List<String> viewTypes,
+            List<String> mediaTypes
+    ) throws IOException {
 
         VehicleDetails vehicle =
-                getVehicle(vehicleId);
+                getVehicleEntity(vehicleId);
 
-        // Prevent duplicate media when Step 2 is saved again.
-        vehicleMediaRepository.deleteByVehicle(vehicle);
-
-        int uploadedFiles = 0;
 
         if (files == null || files.isEmpty()) {
+
             return new VehicleMediaResponse(
                     vehicleId,
                     0
             );
         }
 
+
+        int savedFiles = 0;
+
+
         for (int i = 0; i < files.size(); i++) {
 
-            MultipartFile file = files.get(i);
+            MultipartFile file =
+                    files.get(i);
 
-            if (file == null || file.isEmpty()) {
+            if (file == null ||
+                    file.isEmpty()) {
+
                 continue;
             }
 
-            String category = "ADDITIONAL";
-
-            if (categories != null &&
-                    categories.size() > i &&
-                    categories.get(i) != null) {
-
-                category = categories.get(i);
-            }
-
-            String mediaType = "PHOTO";
-
-            if (mediaTypes != null &&
-                    mediaTypes.size() > i &&
-                    mediaTypes.get(i) != null) {
-
-                mediaType = mediaTypes.get(i);
-            }
 
             VehicleMedia media =
                     new VehicleMedia();
 
             media.setVehicle(vehicle);
-
-            media.setMediaType(
-                    mediaType.trim().toUpperCase()
-            );
-
-            media.setMediaCategory(
-                    category.trim().toUpperCase()
-            );
 
             media.setFileName(
                     file.getOriginalFilename()
@@ -198,102 +214,120 @@ public class VehicleDetailsService {
                     file.getBytes()
             );
 
-            vehicleMediaRepository.save(media);
 
-            uploadedFiles++;
+            String viewType = null;
+
+            if (viewTypes != null &&
+                    i < viewTypes.size()) {
+
+                viewType =
+                        viewTypes.get(i);
+            }
+
+            media.setMediaCategory(
+                    viewType
+            );
+
+
+            String mediaType = null;
+
+            if (mediaTypes != null &&
+                    i < mediaTypes.size()) {
+
+                mediaType =
+                        mediaTypes.get(i);
+            }
+
+
+            if (mediaType == null ||
+                    mediaType.trim().isEmpty()) {
+
+                String contentType =
+                        file.getContentType();
+
+                if (contentType != null &&
+                        contentType.startsWith("video")) {
+
+                    mediaType = "VIDEO";
+
+                } else {
+
+                    mediaType = "IMAGE";
+                }
+            }
+
+
+            media.setMediaType(
+                    mediaType
+            );
+
+
+            vehicleMediaRepository.save(
+                    media
+            );
+
+            savedFiles++;
         }
+
 
         return new VehicleMediaResponse(
                 vehicleId,
-                uploadedFiles
+                savedFiles
         );
     }
 
+
     // =========================================================
     // STEP 3
-    // DOCUMENTS
+    // SAVE DOCUMENTS
     // =========================================================
 
-    @Transactional
     public VehicleDocumentResponse saveVehicleDocuments(
             Long vehicleId,
             List<MultipartFile> files,
-            List<String> documentTypes)
-            throws IOException {
+            List<String> documentTypes
+    ) throws IOException {
 
         VehicleDetails vehicle =
-                getVehicle(vehicleId);
+                getVehicleEntity(vehicleId);
 
-        // Prevent duplicate documents.
-        vehicleDocumentsRepository.deleteByVehicle(vehicle);
 
-        int uploadedDocuments = 0;
+        if (files == null ||
+                files.isEmpty()) {
 
-        if (files == null || files.isEmpty()) {
             return new VehicleDocumentResponse(
                     vehicleId,
                     0
             );
         }
 
+
+        int savedDocuments = 0;
+
+
         for (int i = 0; i < files.size(); i++) {
 
-            MultipartFile file = files.get(i);
+            MultipartFile file =
+                    files.get(i);
 
-            if (file == null || file.isEmpty()) {
+            if (file == null ||
+                    file.isEmpty()) {
+
                 continue;
             }
 
-            if (file.getSize() >
-                    5 * 1024 * 1024) {
-
-                throw new IllegalArgumentException(
-                        "File size cannot exceed 5MB: "
-                                + file.getOriginalFilename()
-                );
-            }
-
-            String contentType =
-                    file.getContentType();
-
-            if (contentType == null ||
-                    !(contentType.equals(
-                            "application/pdf")
-                      || contentType.equals(
-                            "image/jpeg")
-                      || contentType.equals(
-                            "image/png"))) {
-
-                throw new IllegalArgumentException(
-                        "Only PDF, JPG and PNG files are allowed."
-                );
-            }
-
-            String documentType = "OTHER";
-
-            if (documentTypes != null &&
-                    documentTypes.size() > i &&
-                    documentTypes.get(i) != null) {
-
-                documentType =
-                        documentTypes.get(i);
-            }
 
             VehicleDocuments document =
                     new VehicleDocuments();
 
             document.setVehicle(vehicle);
 
-            document.setDocumentType(
-                    documentType.trim().toUpperCase()
-            );
-
             document.setFileName(
                     file.getOriginalFilename()
             );
 
             document.setContentType(
-                    contentType
+                    file.getContentType()
             );
 
             document.setFileSize(
@@ -304,182 +338,132 @@ public class VehicleDetailsService {
                     file.getBytes()
             );
 
+
+            String documentType =
+                    "OTHER";
+
+
+            if (documentTypes != null &&
+                    i < documentTypes.size() &&
+                    documentTypes.get(i) != null &&
+                    !documentTypes.get(i)
+                            .trim()
+                            .isEmpty()) {
+
+                documentType =
+                        documentTypes.get(i);
+            }
+
+
+            document.setDocumentType(
+                    documentType
+            );
+
+
             vehicleDocumentsRepository.save(
                     document
             );
 
-            uploadedDocuments++;
+            savedDocuments++;
         }
+
 
         return new VehicleDocumentResponse(
                 vehicleId,
-                uploadedDocuments
+                savedDocuments
         );
     }
 
+
     // =========================================================
     // STEP 4
-    // ALL RENT + CHARGES
+    // SAVE PRICING
     // =========================================================
 
-    @Transactional
     public VehicleChargeResponse saveVehicleCharges(
             Long vehicleId,
-            VehiclePricingRequest request) {
+            VehiclePricingRequest request
+    ) {
 
         VehicleDetails vehicle =
-                getVehicle(vehicleId);
+                getVehicleEntity(vehicleId);
 
-        // Replace old Step 4 values.
-        vehicleChargesRepository.deleteByVehicle(vehicle);
+
+        vehicleChargesRepository
+                .deleteByVehicle(vehicle);
+
 
         int savedCharges = 0;
 
-        savedCharges += saveIfPresent(
+
+        savedCharges += saveCharge(
                 vehicle,
-                "HOURLY_RENT",
+                "hourlyRent",
                 request.getHourlyRent()
-                // "HOUR",
-                // "Base hourly rent"
         );
 
-        savedCharges += saveIfPresent(
+        savedCharges += saveCharge(
                 vehicle,
-                "DAILY_RENT",
+                "dailyRent",
                 request.getDailyRent()
-                // "DAY",
-                // "Base daily rent"
         );
 
-        savedCharges += saveIfPresent(
+        savedCharges += saveCharge(
                 vehicle,
-               "WEEKLY_RENT",
+                "weeklyRent",
                 request.getWeeklyRent()
-                // "WEEK",
-                // "Base weekly rent"
         );
 
-        savedCharges += saveIfPresent(
+        savedCharges += saveCharge(
                 vehicle,
-                "MONTHLY_RENT",
+                "monthlyRent",
                 request.getMonthlyRent()
-                // "MONTH",
-                // "Base monthly rent"
         );
 
-        // savedCharges += saveIfPresent(
-        //         vehicle,
-        //         "EXTRA_KM",
-        //         request.getExtraKm(),
-        //         "KM",
-        //         "Extra kilometer charge"
-        // );
-
-        // savedCharges += saveIfPresent(
-        //         vehicle,
-        //         "FREE_KM_PER_DAY",
-        //         request.getFreeKmPerDay(),
-        //         "KM/DAY",
-        //         "Free kilometers per day"
-        // );
-
-        savedCharges += saveIfPresent(
+        savedCharges += saveCharge(
                 vehicle,
-                "SECURITY_DEPOSIT",
+                "securityDeposit",
                 request.getSecurityDeposit()
-                // "FIXED",
-                // "Refundable security deposit"
         );
 
-        savedCharges += saveIfPresent(
+        savedCharges += saveCharge(
                 vehicle,
-                "CLEANING_CHARGES",
+                "cleaningCharges",
                 request.getCleaningCharges()
-                // "FIXED",
-                // "Cleaning charge"
         );
 
-        savedCharges += saveIfPresent(
+        savedCharges += saveCharge(
                 vehicle,
-                "LATE_RETURN_CHARGES",
+                "lateReturnCharges",
                 request.getLateReturnCharges()
-                // "HOUR",
-                // "Late return charge"
         );
 
-        savedCharges += saveIfPresent(
+        savedCharges += saveCharge(
                 vehicle,
-                "CANCELLATION_CHARGES",
+                "cancellationCharges",
                 request.getCancellationCharges()
-                // "PERCENT",
-                // "Cancellation charge percentage"
         );
+
 
         if (request.isEnableDriverCharges()) {
 
-            savedCharges += saveIfPresent(
+            savedCharges += saveCharge(
                     vehicle,
-                    "DRIVER_CHARGES",
+                    "driverCharges",
                     request.getDriverCharges()
-                //     "DAY",
-                //     "Driver charge per day"
             );
         }
+
 
         if (request.isEnableHomeDeliveryCharges()) {
 
-            savedCharges += saveIfPresent(
+            savedCharges += saveCharge(
                     vehicle,
-                    "HOME_DELIVERY_CHARGES",
+                    "homeDeliveryCharges",
                     request.getHomeDeliveryCharges()
-                //     "FIXED",
-                //     "Home delivery charge"
             );
         }
 
-        // if (request.isEnablePickUpCharges()) {
-
-        //     savedCharges += saveIfPresent(
-        //             vehicle,
-        //             "PICKUP_CHARGES",
-        //             request.getPickUpCharges()
-        //         //     "FIXED",
-        //         //     "Pickup charge"
-        //     );
-        // }
-
-        // if (request.isEnableTollCharges()) {
-
-        //     savedCharges += saveIfPresent(
-        //             vehicle,
-        //             "TOLL_CHARGES",
-        //             request.getTollCharges()
-        //         //     "FIXED",
-        //         //     "Toll charge"
-        //     );
-        // }
-
-        // if (request.isEnableParkingCharges()) {
-
-        //     savedCharges += saveIfPresent(
-        //             vehicle,
-        //             "PARKING_CHARGES",
-        //             request.getParkingCharges()
-        //         //     "FIXED",
-        //         //     "Parking charge"
-        //     );
-        // }
-
-        // if (request.isEnableNightCharges()) {
-
-        //     savedCharges += saveIfPresent(
-        //             vehicle,
-        //             "NIGHT_CHARGES",
-        //             request.getNightCharges()
-        //         //     "FIXED",
-        //         //     "Night charge"
-        //     );
-        // }
 
         return new VehicleChargeResponse(
                 vehicleId,
@@ -487,42 +471,613 @@ public class VehicleDetailsService {
         );
     }
 
-    private int saveIfPresent(
+
+    // =========================================================
+    // SAVE ONE CHARGE
+    // =========================================================
+
+    private int saveCharge(
             VehicleDetails vehicle,
             String chargeType,
             Double amount
-        //     String unit,
-        //     String description
-        ) {
+    ) {
 
         if (amount == null) {
             return 0;
         }
 
+
         VehicleCharges charge =
                 new VehicleCharges();
 
         charge.setVehicle(vehicle);
-        charge.setChargeType(chargeType);
-        charge.setAmount(amount);
-        // charge.setUnit(unit);
-        // charge.setDescription(description);
 
-        vehicleChargesRepository.save(charge);
+        charge.setChargeType(
+                chargeType
+        );
+
+        charge.setAmount(
+                amount
+        );
+
+
+        vehicleChargesRepository.save(
+                charge
+        );
+
 
         return 1;
     }
 
-    private VehicleDetails getVehicle(
-            Long vehicleId) {
+
+    // =========================================================
+    // GET ALL VEHICLES
+    // CUSTOMER DASHBOARD
+    // OWNER DASHBOARD
+    // =========================================================
+
+    @Transactional(readOnly = true)
+    public List<VehicleCatalogResponse>
+    getAllVehicleCatalog() {
+
+        List<VehicleDetails> vehicles =
+                vehicleDetailsRepository.findAll();
+
+
+        if (vehicles.isEmpty()) {
+
+            return Collections.emptyList();
+        }
+
+
+        return vehicles.stream()
+                .map(this::buildVehicleCatalog)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<VehicleCatalogResponse> getVehicleCatalogByOwnerId(Long ownerId) {
+        if (ownerId == null) {
+            return Collections.emptyList();
+        }
+
+        VehicleOwner owner = vehicleOwnerRepository.findById(ownerId)
+                .orElseThrow(() -> new RuntimeException("Owner not found with ID: " + ownerId));
+
+        List<VehicleDetails> vehicles = vehicleDetailsRepository.findByOwner(owner);
+
+        if (vehicles.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return vehicles.stream()
+                .map(this::buildVehicleCatalog)
+                .collect(Collectors.toList());
+    }
+
+
+    // =========================================================
+    // GET ONE VEHICLE
+    // VIEW VEHICLE DETAILS
+    // =========================================================
+
+    @Transactional(readOnly = true)
+    public VehicleCatalogResponse
+    getVehicleCatalogById(Long vehicleId) {
+
+        VehicleDetails vehicle =
+                vehicleDetailsRepository
+                        .findById(vehicleId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Vehicle not found with ID: "
+                                                + vehicleId
+                                )
+                        );
+
+
+        return buildVehicleCatalog(
+                vehicle
+        );
+    }
+
+
+    // =========================================================
+    // BUILD COMPLETE CATALOG RESPONSE
+    // =========================================================
+
+    private VehicleCatalogResponse
+    buildVehicleCatalog(
+            VehicleDetails vehicle
+    ) {
+
+        VehicleCatalogResponse response =
+                new VehicleCatalogResponse();
+
+
+        // =====================================================
+        // BASIC VEHICLE INFORMATION
+        // =====================================================
+
+        response.setId(
+                vehicle.getId()
+        );
+
+        if (vehicle.getOwner() != null) {
+            response.setOwnerId(vehicle.getOwner().getId());
+            response.setOwnerName(vehicle.getOwner().getFullName());
+            response.setOwnerEmail(vehicle.getOwner().getEmail());
+        }
+
+        response.setVehicleName(
+                vehicle.getVehicleName()
+        );
+
+        response.setVehicleType(
+                vehicle.getVehicleType()
+        );
+
+        response.setBrand(
+                vehicle.getBrand()
+        );
+
+        response.setModel(
+                vehicle.getModel()
+        );
+
+        response.setManufacturingYear(
+                vehicle.getManufacturingYear()
+        );
+
+        response.setVehicleNo(
+                vehicle.getVehicleNo()
+        );
+
+        response.setFuelType(
+                vehicle.getFuelType()
+        );
+
+        response.setTransmission(
+                vehicle.getTransmission()
+        );
+
+        response.setEngineCapacity(
+                vehicle.getEngineCapacity()
+        );
+
+        response.setColor(
+                vehicle.getColor()
+        );
+
+        response.setSeatingCapacity(
+                vehicle.getSeatingCapacity()
+        );
+
+        response.setMileage(
+                vehicle.getMileage()
+        );
+
+        response.setDescription(
+                vehicle.getDescription()
+        );
+
+
+        // =====================================================
+        // FEATURES
+        // =====================================================
+
+        List<VehicleFeatures> features =
+                vehicleFeaturesRepository
+                        .findByVehicle(vehicle);
+
+
+        List<VehicleFeatureCatalogResponse>
+                featureResponses =
+                new ArrayList<>();
+
+
+        for (VehicleFeatures feature :
+                features) {
+
+            featureResponses.add(
+                    new VehicleFeatureCatalogResponse(
+                            feature.getId(),
+                            feature.getFeatureName()
+                    )
+            );
+        }
+
+
+        response.setFeatures(
+                featureResponses
+        );
+
+
+        // =====================================================
+        // MEDIA
+        // =====================================================
+
+        List<VehicleMedia> mediaList =
+                vehicleMediaRepository
+                        .findByVehicle(vehicle);
+
+
+        List<VehicleMediaCatalogResponse>
+                mediaResponses =
+                new ArrayList<>();
+
+
+        String frontImage = null;
+
+
+        for (VehicleMedia media :
+                mediaList) {
+
+            String base64Data = null;
+
+
+            if (media.getFileData() != null) {
+
+                base64Data =
+                        Base64.getEncoder()
+                                .encodeToString(
+                                        media.getFileData()
+                                );
+            }
+
+
+            VehicleMediaCatalogResponse
+                    mediaResponse =
+                    new VehicleMediaCatalogResponse(
+                            media.getId(),
+                            media.getMediaType(),
+                            media.getMediaCategory(),
+                            media.getFileName(),
+                            media.getContentType(),
+                            media.getFileSize(),
+                            base64Data
+                    );
+
+
+            mediaResponses.add(
+                    mediaResponse
+            );
+
+
+            // =================================================
+            // FIND FRONT IMAGE
+            // =================================================
+
+            if (frontImage == null &&
+                    isImage(media) &&
+                    isFrontMedia(media)) {
+
+                frontImage =
+                        createDataUrl(
+                                media.getContentType(),
+                                base64Data
+                        );
+            }
+        }
+
+
+        // If no category is marked FRONT,
+        // use first image as front image.
+        if (frontImage == null) {
+
+            for (VehicleMedia media :
+                    mediaList) {
+
+                if (isImage(media) &&
+                        media.getFileData() != null) {
+
+                    String base64 =
+                            Base64.getEncoder()
+                                    .encodeToString(
+                                            media.getFileData()
+                                    );
+
+
+                    frontImage =
+                            createDataUrl(
+                                    media.getContentType(),
+                                    base64
+                            );
+
+                    break;
+                }
+            }
+        }
+
+
+        response.setMedia(
+                mediaResponses
+        );
+
+        response.setFrontImage(
+                frontImage
+        );
+
+
+        // =====================================================
+        // DOCUMENTS
+        // =====================================================
+
+        List<VehicleDocuments> documents =
+                vehicleDocumentsRepository
+                        .findByVehicle(vehicle);
+
+
+        List<VehicleDocumentCatalogResponse>
+                documentResponses =
+                new ArrayList<>();
+
+
+        for (VehicleDocuments document :
+                documents) {
+
+            String base64Data = null;
+
+
+            if (document.getFileData() != null) {
+
+                base64Data =
+                        Base64.getEncoder()
+                                .encodeToString(
+                                        document.getFileData()
+                                );
+            }
+
+
+            documentResponses.add(
+                    new VehicleDocumentCatalogResponse(
+                            document.getId(),
+                            document.getDocumentType(),
+                            document.getFileName(),
+                            document.getContentType(),
+                            document.getFileSize(),
+                            base64Data
+                    )
+            );
+        }
+
+
+        response.setDocuments(
+                documentResponses
+        );
+
+
+        // =====================================================
+        // CHARGES
+        // =====================================================
+
+        List<VehicleCharges> charges =
+                vehicleChargesRepository
+                        .findByVehicle(vehicle);
+
+
+        List<VehicleChargeCatalogResponse>
+                chargeResponses =
+                new ArrayList<>();
+
+
+        for (VehicleCharges charge :
+                charges) {
+
+            chargeResponses.add(
+                    new VehicleChargeCatalogResponse(
+                            charge.getId(),
+                            charge.getChargeType(),
+                            charge.getAmount()
+                    )
+            );
+        }
+
+
+        response.setCharges(
+                chargeResponses
+        );
+
+
+        // =====================================================
+        // CONVERT CHARGES TO QUICK PRICING
+        // =====================================================
+
+        Map<String, Double> chargeMap =
+                charges.stream()
+                        .collect(Collectors.toMap(
+                                charge ->
+                                        normalize(
+                                                charge.getChargeType()
+                                        ),
+                                VehicleCharges::getAmount,
+                                (first, second) -> first
+                        ));
+
+
+        response.setHourlyRent(
+                chargeMap.get("hourlyrent")
+        );
+
+        response.setDailyRent(
+                chargeMap.get("dailyrent")
+        );
+
+        response.setWeeklyRent(
+                chargeMap.get("weeklyrent")
+        );
+
+        response.setMonthlyRent(
+                chargeMap.get("monthlyrent")
+        );
+
+        response.setSecurityDeposit(
+                chargeMap.get("securitydeposit")
+        );
+
+        response.setCleaningCharges(
+                chargeMap.get("cleaningcharges")
+        );
+
+        response.setLateReturnCharges(
+                chargeMap.get("latereturncharges")
+        );
+
+        response.setCancellationCharges(
+                chargeMap.get("cancellationcharges")
+        );
+
+        response.setDriverCharges(
+                chargeMap.get("drivercharges")
+        );
+
+        response.setHomeDeliveryCharges(
+                chargeMap.get("homedeliverycharges")
+        );
+
+
+        response.setEnableDriverCharges(
+                chargeMap.containsKey(
+                        "drivercharges"
+                )
+        );
+
+        response.setEnableHomeDeliveryCharges(
+                chargeMap.containsKey(
+                        "homedeliverycharges"
+                )
+        );
+
+
+        return response;
+    }
+
+
+    // =========================================================
+    // GET VEHICLE ENTITY
+    // =========================================================
+
+    private VehicleDetails getVehicleEntity(
+            Long vehicleId
+    ) {
 
         return vehicleDetailsRepository
                 .findById(vehicleId)
-                .orElseThrow(
-                        () -> new IllegalArgumentException(
+                .orElseThrow(() ->
+                        new RuntimeException(
                                 "Vehicle not found with ID: "
                                         + vehicleId
                         )
+                );
+    }
+
+
+    // =========================================================
+    // CHECK IMAGE
+    // =========================================================
+
+    private boolean isImage(
+            VehicleMedia media
+    ) {
+
+        if (media.getContentType() != null &&
+                media.getContentType()
+                        .toLowerCase()
+                        .startsWith("image/")) {
+
+            return true;
+        }
+
+
+        if (media.getMediaType() != null &&
+                media.getMediaType()
+                        .toLowerCase()
+                        .contains("image")) {
+
+            return true;
+        }
+
+
+        return false;
+    }
+
+
+    // =========================================================
+    // CHECK FRONT MEDIA
+    // =========================================================
+
+    private boolean isFrontMedia(
+            VehicleMedia media
+    ) {
+
+        if (media.getMediaCategory() == null) {
+            return false;
+        }
+
+
+        String category =
+                media.getMediaCategory()
+                        .trim()
+                        .toLowerCase();
+
+
+        return category.equals("front") ||
+                category.equals("frontview") ||
+                category.equals("front view") ||
+                category.equals("front_image") ||
+                category.equals("front image");
+    }
+
+
+    // =========================================================
+    // DATA URL
+    // =========================================================
+
+    private String createDataUrl(
+            String contentType,
+            String base64
+    ) {
+
+        if (base64 == null) {
+            return null;
+        }
+
+
+        if (contentType == null ||
+                contentType.trim().isEmpty()) {
+
+            contentType =
+                    "image/jpeg";
+        }
+
+
+        return "data:" +
+                contentType +
+                ";base64," +
+                base64;
+    }
+
+
+    // =========================================================
+    // NORMALIZE CHARGE TYPE
+    // =========================================================
+
+    private String normalize(
+            String value
+    ) {
+
+        if (value == null) {
+            return "";
+        }
+
+
+        return value
+                .replace("_", "")
+                .replace("-", "")
+                .replace(" ", "")
+                .trim()
+                .toLowerCase(
+                        Locale.ROOT
                 );
     }
 }

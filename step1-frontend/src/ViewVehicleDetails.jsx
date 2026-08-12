@@ -1,462 +1,1500 @@
-import React, { useEffect } from "react";
-import carImage from "./assets/car_image.jpg";
+import React, { useEffect, useState } from "react";
 
-export default function ViewVehicleDetails({ vehicle, onBack, onBookVehicle, onViewProfile, showFooter = true }) {
+const API_BASE_URL =
+  "http://localhost:8080/api/vehicle-owners/vehicles";
+
+export default function ViewVehicleDetails({
+  vehicle,
+  onBack,
+  onBookVehicle,
+  onViewProfile,
+  showFooter = true,
+}) {
+
+  const [vehicleData, setVehicleData] =
+    useState(vehicle);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+
+  // =========================================================
+  // GET COMPLETE VEHICLE
+  // =========================================================
+
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, []);
-  const defaultVehicle = {
-    name: "Hyundai i20",
-    fuel: "Petrol",
-    transmission: "Manual",
-    seats: "5 Seater",
-    priceHour: "₹149",
-    priceDay: "₹1499",
-    priceWeek: "₹8999",
-    priceMonth: "₹29999",
-    rating: "4.5",
-    reviews: 126,
-    distance: "1.2 km away",
-    description: "Comfortable hatchback with spacious seating and smooth city drive.",
-    imageUrl: carImage,
-    owner: {
-      name: "Amit Sharma",
-      rating: "4.7",
-      reviews: 89,
-      joined: "Jan 2022",
-      phone: "+91 98765 43210",
-      email: "amit.sharma@example.com",
-    },
-  };
 
-  const mainVehicle = {
-    ...defaultVehicle,
-    ...(vehicle || {}),
-    owner: {
-      ...defaultVehicle.owner,
-      ...(vehicle?.owner || {}),
-    },
-  };
+    const loadVehicle = async () => {
 
-  const imageSources = [
-    mainVehicle.imageUrl || carImage,
-    carImage,
-    carImage,
-    carImage,
-    carImage,
-  ];
+      if (!vehicle?.id) {
+        return;
+      }
 
-  const visibleThumbnails = imageSources.slice(0, 3);
-  const [activeImageIndex, setActiveImageIndex] = React.useState(0);
-  const [calendarDate, setCalendarDate] = React.useState(new Date());
-  const [selectedDate, setSelectedDate] = React.useState(null);
 
-  const availableDates = new Set([16, 17, 18, 19, 20, 23]);
-  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      try {
 
-  const monthName = calendarDate.toLocaleString("default", { month: "long" });
-  const year = calendarDate.getFullYear();
-  const monthIndex = calendarDate.getMonth();
-  const firstDayIndex = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+        setLoading(true);
 
-  const calendarCells = Array.from({ length: 42 }, (_, idx) => {
-    const dayNumber = idx - firstDayIndex + 1;
-    return dayNumber > 0 && dayNumber <= daysInMonth ? dayNumber : null;
-  });
+        setError("");
 
-  const handlePrevMonth = () => {
-    setCalendarDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-    setSelectedDate(null);
-  };
 
-  const handleNextMonth = () => {
-    setCalendarDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-    setSelectedDate(null);
-  };
+        const response =
+          await fetch(
+            `${API_BASE_URL}/catalog/${vehicle.id}`
+          );
 
-  const handleDateClick = (day) => {
-    if (!day || !availableDates.has(day)) return;
-    setSelectedDate(day);
-  };
 
-  const features = [
-    { icon: "⛽", label: "Fuel Type", value: mainVehicle.fuel },
-    { icon: "⚡", label: "Mileage", value: "18 km/l" },
-    { icon: "⚙️", label: "Transmission", value: mainVehicle.transmission },
-    { icon: "👥", label: "Seating Capacity", value: mainVehicle.seats },
-    { icon: "🛠️", label: "Engine", value: "1197 cc" },
-    { icon: "💪", label: "Power", value: "82 bhp" },
-    { icon: "🧳", label: "Boot Space", value: "311 L" },
-    { icon: "❄️", label: "Air Conditioner", value: "Yes" },
-    { icon: "🔊", label: "Bluetooth", value: "Yes" },
-    { icon: "🔌", label: "USB Charger", value: "Yes" },
-    { icon: "🎵", label: "Music System", value: "Yes" },
-  ];
+        if (!response.ok) {
 
-  const ownerPolicies = [
-    { icon: "🚭", title: "Smoking", subtitle: "Not Allowed" },
-    { icon: "🐾", title: "Pets", subtitle: "Not Allowed" },
-    { icon: "👤", title: "Driver Age", subtitle: "Above 21 yrs" },
-    { icon: "⛽", title: "Fuel Policy", subtitle: "Same to Same" },
-    { icon: "📏", title: "Kilometer Limit", subtitle: "250 km/day" },
-    { icon: "⏳", title: "Cancellation", subtitle: "Free till 24 hrs" },
-  ];
+          throw new Error(
+            `HTTP error: ${response.status}`
+          );
+        }
 
-  const handleBookNow = () => {
-    if (typeof onBookVehicle === "function") {
-      onBookVehicle();
+
+        const result =
+          await response.json();
+
+
+        if (
+          result.success === false
+        ) {
+
+          throw new Error(
+            result.message ||
+            "Unable to load vehicle."
+          );
+        }
+
+
+        if (result.data) {
+
+          setVehicleData(
+            result.data
+          );
+        }
+
+      } catch (err) {
+
+        console.error(
+          "Vehicle details error:",
+          err
+        );
+
+        setError(
+          err.message ||
+          "Unable to load vehicle details."
+        );
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
+
+
+    loadVehicle();
+
+  }, [vehicle?.id]);
+
+
+  if (!vehicleData) {
+
+    return (
+      <div
+        style={{
+          padding: "40px",
+        }}
+      >
+        Vehicle not selected.
+      </div>
+    );
+  }
+
+
+  // =========================================================
+  // HELPERS
+  // =========================================================
+
+  const formatPrice = (
+    amount
+  ) => {
+
+    if (
+      amount === null ||
+      amount === undefined
+    ) {
+
+      return "Not available";
     }
-  }; 
+
+
+    return `₹${Number(
+      amount
+    ).toLocaleString("en-IN")}`;
+  };
+
+  const handleViewDocument = (
+    document
+  ) => {
+    if (!document?.fileData) {
+      return;
+    }
+
+    try {
+      const cleanedBase64 =
+        document.fileData.replace(
+          /\s/g,
+          ""
+        );
+
+      const binaryString = atob(
+        cleanedBase64
+      );
+      const bytes = new Uint8Array(
+        binaryString.length
+      );
+
+      for (
+        let index = 0;
+        index < binaryString.length;
+        index += 1
+      ) {
+        bytes[index] =
+          binaryString.charCodeAt(
+            index
+          );
+      }
+
+      const blob = new Blob(
+        [bytes],
+        {
+          type:
+            document.contentType ||
+            "application/octet-stream",
+        }
+      );
+
+      const objectUrl =
+        URL.createObjectURL(blob);
+
+      window.open(
+        objectUrl,
+        "_blank",
+        "noopener,noreferrer"
+      );
+
+      window.setTimeout(() => {
+        URL.revokeObjectURL(
+          objectUrl
+        );
+      }, 10000);
+    } catch (err) {
+      console.error(
+        "Unable to open document:",
+        err
+      );
+      alert(
+        "Unable to open this document. Please try again."
+      );
+    }
+  };
+
+
+  const imageFromMedia = (
+    media
+  ) => {
+
+    if (
+      media?.fileData &&
+      media?.contentType
+    ) {
+
+      return `data:${media.contentType};base64,${media.fileData}`;
+    }
+
+
+    return null;
+  };
+
+
+  const imageList =
+    Array.isArray(
+      vehicleData.media
+    )
+      ? vehicleData.media.filter(
+          (media) =>
+            media?.contentType
+              ?.toLowerCase()
+              .startsWith("image/")
+        )
+      : [];
+
+
+  const videoList =
+    Array.isArray(
+      vehicleData.media
+    )
+      ? vehicleData.media.filter(
+          (media) =>
+            media?.contentType
+              ?.toLowerCase()
+              .startsWith("video/")
+        )
+      : [];
+
 
   return (
-    <div className="view-details-shell">
-      <div className="view-details-main">
-        <header className="detail-topbar">
-          <div className="detail-topbar-left">
-            <button type="button" className="detail-back-button" onClick={onBack}>
-              ← Back
-            </button>
-          </div>
-        </header>
+    <div
+      style={{
+        padding: "24px",
+        background: "#f4f7fb",
+        minHeight: "100vh",
+      }}
+    >
 
-        <div className="detail-main-scroll">
-          <div className="detail-main-grid">
-            <section className="detail-gallery">
-              <div className="detail-image-placeholder">
-                <img src={imageSources[activeImageIndex]} alt="Vehicle preview" />
-              </div>
-              <div className="thumbnail-row">
-                {visibleThumbnails.map((src, index) => {
-                  const isLastVisibleThumbnail = index === visibleThumbnails.length - 1;
-                  const remainingCount = imageSources.length - visibleThumbnails.length;
+      {/* =====================================================
+          TOP ACTIONS
+      ===================================================== */}
 
-                  return (
-                    <button
-                      key={index}
-                      type="button"
-                      className={`thumbnail-item ${index === activeImageIndex ? "thumbnail-active" : ""}`}
-                      onClick={() => setActiveImageIndex(index)}
-                    >
-                      <img src={src} alt={`Vehicle thumbnail ${index + 1}`} />
-                      {isLastVisibleThumbnail && remainingCount > 0 && (
-                        <span className="thumbnail-more-overlay">+{remainingCount}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
+      <div
+        style={{
+          display: "flex",
+          justifyContent:
+            "space-between",
+          alignItems: "center",
+          marginBottom: "24px",
+          marginTop: "40px"
+        }}
+      >
 
-            <aside className="detail-summary">
-              <div className="detail-summary-top">
-                <h2>{mainVehicle.name}</h2>
-                <div className="detail-badges">
-                  <span>{mainVehicle.fuel}</span>
-                  <span>{mainVehicle.transmission}</span>
-                  <span>{mainVehicle.seats}</span>
-                </div>
-              </div>
+        <button
+          type="button"
+          onClick={onBack}
+          style={styles.backButton}
+        >
+          ← Back to Vehicles
+        </button>
 
-              <div className="detail-summary-body">
-                <p className="vehicle-detail-text">Comfortable hatchback with spacious seating and smooth city drive.</p>
+        <button
+          type="button"
+          onClick={() =>
+            onBookVehicle?.(
+              vehicleData
+            )
+          }
+          style={styles.bookButton}
+        >
+          Book Now
+        </button>
 
-                <div className="detail-vehicle-details">
-                  <h3>Vehicle Details</h3>
-                  <div className="detail-spec-list">
-                    <div className="detail-spec-item">
-                      <span>Fuel Type</span>
-                      <strong>{mainVehicle.fuel}</strong>
-                    </div>
-                    <div className="detail-spec-item">
-                      <span>Transmission</span>
-                      <strong>{mainVehicle.transmission}</strong>
-                    </div>
-                    <div className="detail-spec-item">
-                      <span>Mileage</span>
-                      <strong>18 km/l</strong>
-                    </div>
-                    <div className="detail-spec-item">
-                      <span>Seats Capacity</span>
-                      <strong>{mainVehicle.seats}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="detail-summary-meta">
-                  <div>
-                    <strong>Distance</strong>
-                    <span>{mainVehicle.distance}</span>
-                  </div>
-                  <div>
-                    <strong>Owner Name</strong>
-                    <span>{mainVehicle.owner.name}</span>
-                  </div>
-                </div>
-
-                <div className="detail-charges">
-                  <div className="charge-block">
-                    <span>Per hour</span>
-                    <strong>{mainVehicle.priceHour}</strong>
-                  </div>
-                  <div className="charge-block">
-                    <span>Per day</span>
-                    <strong>{mainVehicle.priceDay}</strong>
-                  </div>
-                  <div className="charge-block">
-                    <span>Per week</span>
-                    <strong>{mainVehicle.priceWeek}</strong>
-                  </div>
-                </div>
-
-                <div className="detail-actions">
-                  <button type="button" className="primary-button full-width-button" onClick={handleBookNow}>Book Now</button>
-                </div>
-              </div>
-            </aside>
-          </div>
-
-          <div className="detail-content-grid">
-            <article className="detail-card vehicle-description-card">
-              <h2>Vehicle Description</h2>
-              <p>
-                This Hyundai i20 is in excellent condition. Well maintained and regularly serviced.
-                Perfect for city rides and long drives. Comfortable seating, smooth drive and great
-                mileage.
-              </p>
-              <div className="vehicle-features-header">
-                <h3>Vehicle Features</h3>
-              </div>
-              <div className="vehicle-features-grid">
-                {features.map((feature) => (
-                  <div key={feature.label} className="feature-block">
-                    <div className="feature-icon-badge">{feature.icon}</div>
-                    <div className="feature-text">
-                      <strong>{feature.label}</strong>
-                      <span>{feature.value}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="owner-policies-section">
-                <div className="owner-policies-header">
-                  <h3>Owner Policies</h3>
-                </div>
-                <div className="owner-policies-grid">
-                  {ownerPolicies.map((policy) => (
-                    <div key={policy.title} className="policy-block">
-                      <div className="policy-icon-badge">{policy.icon}</div>
-                      <div className="policy-text">
-                        <strong>{policy.title}</strong>
-                        <span>{policy.subtitle}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </article>
-
-            {/* <article className="detail-card owner-details-card">
-              <b className="card-title"> Owner Details</b>
-              <div className="owner-details-head owner-details-center">
-               
-                <div className="owner-avatar-circle">
-                  <img src={carImage} alt={mainVehicle.owner.name} />
-                </div>
-                <div className="owner-details-info">
-                  <h3>{mainVehicle.owner.name}</h3>
-                  <p>Verified owner • Member since {mainVehicle.owner.joined}</p>
-                </div>
-              </div>
-
-              {/* <div className="owner-contact-list">
-                <div className="owner-contact-item">
-                  <span>Phone</span>
-                  <strong>{mainVehicle.owner.phone}</strong>
-                </div>
-                <div className="owner-contact-item">
-                  <span>Email</span>
-                  <strong>{mainVehicle.owner.email}</strong>
-                </div>
-              </div> */}
-
-              {/* <div className="owner-detail-actions">
-                {/* <button type="button" className="primary-button owner-action-btn owner-chat-btn">Chat With Owner</button> */}
-                {/* <button type="button" className="secondary-button owner-action-btn" onClick={() => {
-                  if (typeof onViewProfile === "function") {
-                    onViewProfile();
-                  }
-                }}>View Profile</button>
-              </div>
-            </article> */} 
-
-            <article className="detail-card availability-card">
-              <div className="availability-header">
-                <div>
-                  <h2>Availability</h2>
-                </div>
-                <div className="calendar-nav">
-                  <button type="button" className="calendar-nav-btn" onClick={handlePrevMonth}>
-                    ←
-                  </button>
-                  <span className="calendar-month-label">{monthName} {year}</span>
-                  <button type="button" className="calendar-nav-btn" onClick={handleNextMonth}>
-                    →
-                  </button>
-                </div>
-              </div>
-
-              <div className="calendar-grid">
-                {daysOfWeek.map((day) => (
-                  <div key={day} className="calendar-weekday">
-                    {day}
-                  </div>
-                ))}
-
-                {calendarCells.map((day, index) => {
-                  const isSelected = day && day === selectedDate;
-                  const isAvailable = day && availableDates.has(day);
-                  const isBooked = day && !availableDates.has(day);
-                  return (
-                    <button
-                      key={`${day}-${index}`}
-                      type="button"
-                      className={`calendar-day-cell ${day ? "" : "calendar-empty"} ${isAvailable ? "calendar-available" : ""} ${isBooked ? "calendar-booked" : ""} ${isSelected ? "calendar-selected" : ""}`}
-                      onClick={() => handleDateClick(day)}
-                      disabled={!day || !isAvailable}
-                    >
-                      {day || ""}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="calendar-legend">
-                <div>
-                  <span className="legend-dot available"></span>
-                  Available
-                </div>
-                <div>
-                  <span className="legend-dot booked"></span>
-                  Booked
-                </div>
-              </div>
-            </article>
-             
-              <article className="detail-card ratings-card">
-              <div className="ratings-header">
-                <h2>What others say about this vehicle</h2>
-              </div>
-              <div className="ratings-main-grid">
-                <div className="ratings-score-panel">
-                  <div className="rating-value">4.5</div>
-                  <div className="rating-subtext">Out of 5</div>
-                  <div className="rating-stars">★★★★★</div>
-                  <div className="rating-review-count">(126 Reviews)</div>
-                </div>
-                <div className="rating-breakdown-panel">
-                  {[
-                    { label: '5 ★', value: 80 },
-                    { label: '4 ★', value: 12 },
-                    { label: '3 ★', value: 5 },
-                    { label: '2 ★', value: 2 },
-                    { label: '1 ★', value: 1 },
-                  ].map((row) => (
-                    <div key={row.label} className="rating-bar-row">
-                      <span className="rating-bar-label">{row.label}</span>
-                      <div className="rating-bar-track">
-                        <div className="rating-bar-fill" style={{ width: `${row.value}%` }} />
-                      </div>
-                      <span className="rating-bar-value">{row.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </article>
-
-              <article className="detail-card reviews-card reviews-cards">
-              <div className="reviews-header">
-                <div>
-                  <h2>Reviews</h2>
-                </div>
-              </div>
-
-              <div className="review-item-card">
-                <div className="review-avatar">RV</div>
-                <div className="review-body">
-                  <div className="review-meta-row">
-                    <strong>Rohit Verma</strong>
-                    <span>May 10, 2024</span>
-                  </div>
-                  <div className="review-stars">★★★★★</div>
-                  <p>Very good car in this price range. Neat and clean.</p>
-                </div>
-              </div>
-
-              <div className="review-item-card">
-                <div className="review-avatar">PN</div>
-                <div className="review-body">
-                  <div className="review-meta-row">
-                    <strong>Pooja Nair</strong>
-                    <span>May 05, 2024</span>
-                  </div>
-                  <div className="review-stars">★★★★★</div>
-                  <p>Smooth ride and excellent service by the owner.</p>
-                </div>
-              </div>
-
-              <div className="review-item-card">
-                <div className="review-avatar">PN</div>
-                <div className="review-body">
-                  <div className="review-meta-row">
-                    <strong>om Ithape</strong>
-                    <span>May 10, 2024</span>
-                  </div>
-                  <div className="review-stars">★★★★★</div>
-                  <p>Smooth ride and excellent service by the owner.</p>
-                </div>
-              </div>
-
-            </article>
-
-
-          </div>
-        </div>
       </div>
 
-      {showFooter && (
-        <div className="site-footer">
-          <div className="footer-inner">
-            <div className="footer-top">
-              <div>
-                <h2 className="footer-brand-name">RentWheels</h2>
-                <p className="footer-brand-copy">Convenient vehicle rentals for every journey, powered by smart booking and trusted service.</p>
-              </div>
 
-              <div className="footer-links">
-                <div>
-                  <h4>Explore</h4>
-                  <a href="/">Home</a>
-                  <a href="/vehicles">Vehicles</a>
-                  <a href="/offers">Offers</a>
-                </div>
-                <div>
-                  <h4>Support</h4>
-                  <a href="/how-it-works">How It Works</a>
-                  <a href="/about">About Us</a>
-                  <a href="/contact">Contact</a>
-                </div>
-              </div>
-            </div>
+      {loading && (
 
-            <div className="footer-bottom">
-              <div>© {new Date().getFullYear()} RentWheels. All rights reserved.</div>
-              <div>Contact: <a href="mailto:support@rentwheels.com">support@rentwheels.com</a></div>
-            </div>
-          </div>
+        <div
+          style={{
+            padding: "15px",
+            background: "#eff6ff",
+            color: "#1d4ed8",
+            borderRadius: "12px",
+            marginBottom: "20px",
+          }}
+        >
+          Loading complete vehicle details...
         </div>
+
       )}
+
+
+      {error && (
+
+        <div
+          style={{
+            padding: "15px",
+            background: "#fef2f2",
+            color: "#b91c1c",
+            borderRadius: "12px",
+            marginBottom: "20px",
+          }}
+        >
+          {error}
+        </div>
+
+      )}
+
+
+      {/* =====================================================
+          VEHICLE HEADER
+      ===================================================== */}
+
+      <section
+        style={styles.card}
+      >
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "minmax(300px, 1fr) minmax(300px, 1.2fr)",
+            gap: "30px",
+          }}
+        >
+
+          {/* FRONT IMAGE */}
+
+          <div>
+
+            <div
+              style={{
+                borderRadius: "20px",
+                overflow: "hidden",
+                background:
+                  "#e5e7eb",
+                height: "360px",
+              }}
+            >
+
+              {vehicleData.frontImage ? (
+
+                <img
+                  src={
+                    vehicleData.frontImage
+                  }
+                  alt={
+                    vehicleData.vehicleName
+                  }
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit:
+                      "cover",
+                  }}
+                />
+
+              ) : (
+
+                <div
+                  style={{
+                    height: "100%",
+                    display: "grid",
+                    placeItems:
+                      "center",
+                    color:
+                      "#64748b",
+                  }}
+                >
+                  No front image available
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+
+          {/* BASIC INFORMATION */}
+
+          <div>
+
+            <span
+              style={
+                styles.typeBadge
+              }
+            >
+              {
+                vehicleData.vehicleType ||
+                "Vehicle"
+              }
+            </span>
+
+
+            <h1
+              style={{
+                margin:
+                  "14px 0 8px",
+                fontSize: "32px",
+                color:
+                  "#102a43",
+              }}
+            >
+              {
+                vehicleData.vehicleName
+              }
+            </h1>
+
+
+            <p
+              style={{
+                margin: "0 0 20px",
+                color:
+                  "#64748b",
+                fontSize:
+                  "16px",
+              }}
+            >
+              {
+                vehicleData.brand
+              }{" "}
+              {
+                vehicleData.model
+              }
+            </p>
+
+            
+
+            <div
+              style={
+                styles.priceGrid
+              }
+            >
+
+              <div
+                style={
+                  styles.priceBox
+                }
+              >
+
+                <span>
+                  Per Hour
+                </span>
+
+                <strong>
+                  {
+                    formatPrice(
+                      vehicleData.hourlyRent
+                    )
+                  }
+                </strong>
+
+              </div>
+
+
+              <div
+                style={
+                  styles.priceBox
+                }
+              >
+
+                <span>
+                  Per Day
+                </span>
+
+                <strong>
+                  {
+                    formatPrice(
+                      vehicleData.dailyRent
+                    )
+                  }
+                </strong>
+
+              </div>
+
+
+              <div
+                style={
+                  styles.priceBox
+                }
+              >
+
+                <span>
+                  Per Week
+                </span>
+
+                <strong>
+                  {
+                    formatPrice(
+                      vehicleData.weeklyRent
+                    )
+                  }
+                </strong>
+
+              </div>
+
+
+              <div
+                style={
+                  styles.priceBox
+                }
+              >
+
+                <span>
+                  Per Month
+                </span>
+
+                <strong>
+                  {
+                    formatPrice(
+                      vehicleData.monthlyRent
+                    )
+                  }
+                </strong>
+
+              </div>
+              <button
+              type="button"
+              onClick={() =>
+                onBookVehicle?.(
+                  vehicleData
+                )
+              }
+              style={{
+                ...styles.bookButton,
+                marginBottom:
+                  "20px",
+                width:
+                  "100%",
+
+                marginLeft:"160px",
+              }}
+            >
+              Book Now
+            </button>
+              
+            </div>
+            
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =====================================================
+          VEHICLE DESCRIPTION, INFORMATION & FEATURES
+      ===================================================== */}
+
+      <section
+        style={styles.card}
+      >
+
+        <h2
+          style={
+            styles.sectionTitle
+          }
+        >
+          Vehicle Description
+        </h2>
+
+        <p
+          style={{
+            color: "#475569",
+            lineHeight: 1.8,
+            margin: "0 0 28px",
+          }}
+        >
+          {
+            vehicleData.description ||
+            "No description provided by the vehicle owner."
+          }
+        </p>
+
+        <h2
+          style={{
+            ...styles.sectionTitle,
+            marginTop: "0",
+            marginBottom: "20px",
+          }}
+        >
+          Vehicle Information
+        </h2>
+
+        <div
+          style={
+            styles.infoGrid
+          }
+        >
+
+          <Info
+            label="Vehicle Name"
+            value={
+              vehicleData.vehicleName
+            }
+          />
+
+          <Info
+            label="Vehicle Type"
+            value={
+              vehicleData.vehicleType
+            }
+          />
+
+          <Info
+            label="Brand"
+            value={
+              vehicleData.brand
+            }
+          />
+
+          <Info
+            label="Model"
+            value={
+              vehicleData.model
+            }
+          />
+
+          <Info
+            label="Manufacturing Year"
+            value={
+              vehicleData.manufacturingYear
+            }
+          />
+
+          <Info
+            label="Vehicle Number"
+            value={
+              vehicleData.vehicleNo
+            }
+          />
+
+          <Info
+            label="Fuel Type"
+            value={
+              vehicleData.fuelType
+            }
+          />
+
+          <Info
+            label="Transmission"
+            value={
+              vehicleData.transmission
+            }
+          />
+
+          <Info
+            label="Engine Capacity"
+            value={
+              vehicleData.engineCapacity
+            }
+          />
+
+          <Info
+            label="Color"
+            value={
+              vehicleData.color
+            }
+          />
+
+          <Info
+            label="Seating Capacity"
+            value={
+              vehicleData.seatingCapacity
+            }
+          />
+
+          <Info
+            label="Mileage"
+            value={
+              vehicleData.mileage
+                ? `${vehicleData.mileage} km/l`
+                : "-"
+            }
+          />
+
+        </div>
+
+        <h2
+          style={{
+            ...styles.sectionTitle,
+            marginTop: "28px",
+            marginBottom: "20px",
+          }}
+        >
+          Vehicle Features
+        </h2>
+
+        {vehicleData.features?.length >
+        0 ? (
+
+          <div
+            style={
+              styles.featureGrid
+            }
+          >
+
+            {vehicleData.features.map(
+              (feature) => (
+
+                <div
+                  key={
+                    feature.id
+                  }
+                  style={
+                    styles.featureItem
+                  }
+                >
+                  ✓{" "}
+                  {
+                    feature.featureName
+                  }
+                </div>
+
+              )
+            )}
+
+          </div>
+
+        ) : (
+
+          <p
+            style={{
+              color:
+                "#64748b",
+            }}
+          >
+            No features available.
+          </p>
+
+        )}
+
+      </section>
+
+
+      {/* =====================================================
+          PHOTOS & VIDEOS
+      ===================================================== */}
+
+      {(imageList.length > 0 || videoList.length > 0) && (
+
+        <section
+          style={styles.card}
+        >
+
+          <h2
+            style={
+              styles.sectionTitle
+            }
+          >
+            Vehicle Photos & Videos
+          </h2>
+
+
+          <div
+            style={
+              styles.horizontalMediaScroll
+            }
+          >
+
+            <div
+              style={
+                styles.horizontalMediaRow
+              }
+            >
+
+              {imageList.map(
+                (media) => (
+
+                  <div
+                    key={
+                      media.id
+                    }
+                    style={
+                      styles.mediaCard
+                    }
+                  >
+
+                    <img
+                      src={
+                        imageFromMedia(
+                          media
+                        )
+                      }
+                      alt={
+                        media.fileName ||
+                        "Vehicle"
+                      }
+                      style={{
+                        width:
+                          "100%",
+                        height:
+                          "240px",
+                        objectFit:
+                          "cover",
+                        borderRadius:
+                          "14px",
+                      }}
+                    />
+
+
+                    <div
+                      style={{
+                        padding:
+                          "8px",
+                      }}
+                    >
+                      {
+                        media.mediaCategory ||
+                        "Vehicle Image"
+                      }
+                    </div>
+
+                  </div>
+
+                )
+              )}
+
+              {videoList.map(
+                (media) => (
+
+                  <div
+                    key={
+                      media.id
+                    }
+                    style={
+                      styles.mediaCard
+                    }
+                  >
+
+                    <video
+                      controls
+                      style={{
+                        width:
+                          "100%",
+                        height:
+                          "240px",
+                        objectFit:
+                          "cover",
+                        borderRadius:
+                          "14px",
+                        background:
+                          "#0f172a",
+                      }}
+                    >
+
+                      <source
+                        src={
+                          imageFromMedia(
+                            media
+                          )
+                        }
+                        type={
+                          media.contentType
+                        }
+                      />
+
+                    </video>
+
+
+                    <div
+                      style={{
+                        padding:
+                          "8px",
+                      }}
+                    >
+                      {
+                        media.fileName
+                      }
+                    </div>
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
+          </div>
+
+        </section>
+
+      )}
+
+      {imageList.length === 0 && videoList.length === 0 && (
+
+        <section
+          style={styles.card}
+        >
+
+          <h2
+            style={
+              styles.sectionTitle
+            }
+          >
+            Vehicle Photos & Videos
+          </h2>
+
+          <p
+            style={{
+              color:
+                "#64748b",
+            }}
+          >
+            No vehicle photos or videos available.
+          </p>
+
+        </section>
+
+      )}
+
+
+      {/* =====================================================
+          PRICING
+      ===================================================== */}
+
+      <section
+        style={styles.card}
+      >
+
+        <h2
+          style={
+            styles.sectionTitle
+          }
+        >
+          Rent & Charges
+        </h2>
+
+
+        <div
+          style={
+            styles.infoGrid
+          }
+        >
+
+          <Info
+            label="Hourly Rent"
+            value={
+              formatPrice(
+                vehicleData.hourlyRent
+              )
+            }
+          />
+
+          <Info
+            label="Daily Rent"
+            value={
+              formatPrice(
+                vehicleData.dailyRent
+              )
+            }
+          />
+
+          <Info
+            label="Weekly Rent"
+            value={
+              formatPrice(
+                vehicleData.weeklyRent
+              )
+            }
+          />
+
+          <Info
+            label="Monthly Rent"
+            value={
+              formatPrice(
+                vehicleData.monthlyRent
+              )
+            }
+          />
+
+          <Info
+            label="Security Deposit"
+            value={
+              formatPrice(
+                vehicleData.securityDeposit
+              )
+            }
+          />
+
+          <Info
+            label="Cleaning Charges"
+            value={
+              formatPrice(
+                vehicleData.cleaningCharges
+              )
+            }
+          />
+
+          <Info
+            label="Late Return Charges"
+            value={
+              formatPrice(
+                vehicleData.lateReturnCharges
+              )
+            }
+          />
+
+          <Info
+            label="Cancellation Charges"
+            value={
+              formatPrice(
+                vehicleData.cancellationCharges
+              )
+            }
+          />
+
+          <Info
+            label="Driver Charges"
+            value={
+              vehicleData.enableDriverCharges
+                ? formatPrice(
+                    vehicleData.driverCharges
+                  )
+                : "Not enabled"
+            }
+          />
+
+          <Info
+            label="Home Delivery"
+            value={
+              vehicleData.enableHomeDeliveryCharges
+                ? formatPrice(
+                    vehicleData.homeDeliveryCharges
+                  )
+                : "Not enabled"
+            }
+          />
+
+        </div>
+
+      </section>
+
+
+      {/* =====================================================
+          DOCUMENTS
+      ===================================================== */}
+
+      <section
+        style={styles.card}
+      >
+
+        <h2
+          style={
+            styles.sectionTitle
+          }
+        >
+          Vehicle Documents
+        </h2>
+
+
+        {vehicleData.documents?.length >
+        0 ? (
+
+          <div
+            style={{
+              display:
+                "grid",
+              gap:
+                "12px",
+            }}
+          >
+
+            {vehicleData.documents.map(
+              (document) => (
+
+                <div
+                  key={
+                    document.id
+                  }
+                  style={
+                    styles.documentRow
+                  }
+                >
+
+                  <div>
+
+                    <strong>
+                      {
+                        document.documentType
+                      }
+                    </strong>
+
+                    <div
+                      style={{
+                        color:
+                          "#64748b",
+                        fontSize:
+                          "13px",
+                        marginTop:
+                          "4px",
+                      }}
+                    >
+                      {
+                        document.fileName
+                      }
+                    </div>
+
+                  </div>
+
+
+                  {document.fileData && (
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleViewDocument(
+                          document
+                        )
+                      }
+                      style={
+                        styles.documentButton
+                      }
+                    >
+                      View Document
+                    </button>
+
+                  )}
+
+                </div>
+
+              )
+            )}
+
+          </div>
+
+        ) : (
+
+          <p
+            style={{
+              color:
+                "#64748b",
+            }}
+          >
+            No documents available.
+          </p>
+
+        )}
+
+      </section>
+
+
+      {/* =====================================================
+          BOOK NOW
+      ===================================================== */}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent:
+            "center",
+          margin:
+            "30px 0",
+        }}
+      >
+
+        <button
+          type="button"
+          onClick={() =>
+            onBookVehicle?.(
+              vehicleData
+            )
+          }
+          style={{
+            ...styles.bookButton,
+            padding:
+              "14px 40px",
+            fontSize:
+              "16px",
+          }}
+        >
+          Book This Vehicle
+        </button>
+
+      </div>
+
+
+      {showFooter && (
+
+        <footer
+          style={{
+            marginTop:
+              "30px",
+            padding:
+              "30px",
+            background:
+              "#0c1726",
+            color:
+              "#fff",
+            borderRadius:
+              "20px",
+          }}
+        >
+          VehicleHub © 2026
+        </footer>
+
+      )}
+
     </div>
   );
 }
+
+
+// ===========================================================
+// INFO COMPONENT
+// ===========================================================
+
+function Info({
+  label,
+  value,
+}) {
+
+  return (
+    <div
+      style={
+        styles.infoItem
+      }
+    >
+
+      <span
+        style={
+          styles.infoLabel
+        }
+      >
+        {label}
+      </span>
+
+      <strong
+        style={
+          styles.infoValue
+        }
+      >
+        {value ||
+          "-"}
+      </strong>
+
+    </div>
+  );
+}
+
+
+// ===========================================================
+// STYLES
+// ===========================================================
+
+const styles = {
+
+  card: {
+    background:
+      "#ffffff",
+    borderRadius:
+      "24px",
+    padding:
+      "28px",
+    marginBottom:
+      "24px",
+    boxShadow:
+      "0 15px 35px rgba(15, 23, 42, 0.06)",
+  },
+
+  backButton: {
+    border:
+      "1px solid #d1d5db",
+    background:
+      "#ffffff",
+    padding:
+      "11px 18px",
+    borderRadius:
+      "12px",
+    cursor:
+      "pointer",
+    fontWeight:
+      600,
+  
+  },
+
+  bookButton: {
+    border:
+      "none",
+    background:
+      "#0f7a34",
+    color:
+      "#ffffff",
+    padding:
+      "11px 22px",
+    borderRadius:
+      "12px",
+    cursor:
+      "pointer",
+    fontWeight:
+      700,
+  },
+
+  typeBadge: {
+    display:
+      "inline-block",
+    padding:
+      "7px 12px",
+    background:
+      "#dcfce7",
+    color:
+      "#166534",
+    borderRadius:
+      "999px",
+    fontWeight:
+      700,
+    fontSize:
+      "13px",
+  },
+
+  priceGrid: {
+    display:
+      "grid",
+    gridTemplateColumns:
+      "repeat(2, minmax(0, 1fr))",
+    gap:
+      "12px",
+  },
+
+  priceBox: {
+    background:
+      "#f8fafc",
+    border:
+      "1px solid #e5e7eb",
+    padding:
+      "15px",
+    borderRadius:
+      "14px",
+    display:
+      "grid",
+    gap:
+      "6px",
+  },
+
+  infoGrid: {
+    display:
+      "grid",
+    gridTemplateColumns:
+      "repeat(3, minmax(0, 1fr))",
+    gap:
+      "15px",
+  },
+
+  infoItem: {
+    background:
+      "#f8fafc",
+    borderRadius:
+      "14px",
+    padding:
+      "15px",
+    display:
+      "grid",
+    gap:
+      "7px",
+  },
+
+  infoLabel: {
+    color:
+      "#64748b",
+    fontSize:
+      "13px",
+  },
+
+  infoValue: {
+    color:
+      "#102a43",
+  },
+
+  sectionTitle: {
+    margin:
+      "0 0 20px",
+    color:
+      "#102a43",
+  },
+
+  featureGrid: {
+    display:
+      "grid",
+    gridTemplateColumns:
+      "repeat(3, minmax(0, 1fr))",
+    gap:
+      "12px",
+  },
+
+  featureItem: {
+    background:
+      "#ecfdf5",
+    color:
+      "#166534",
+    padding:
+      "13px 15px",
+    borderRadius:
+      "12px",
+    fontWeight:
+      600,
+  },
+
+  horizontalMediaScroll: {
+    overflowX:
+      "auto",
+    overflowY:
+      "hidden",
+    paddingBottom:
+      "6px",
+    scrollbarWidth:
+      "thin",
+  },
+
+  horizontalMediaRow: {
+    display:
+      "flex",
+    gap:
+      "18px",
+    minWidth:
+      "max-content",
+    alignItems:
+      "stretch",
+  },
+
+  mediaGrid: {
+    display:
+      "grid",
+    gridTemplateColumns:
+      "repeat(3, minmax(0, 1fr))",
+    gap:
+      "18px",
+  },
+
+  mediaCard: {
+    background:
+      "#f8fafc",
+    borderRadius:
+      "14px",
+    overflow:
+      "hidden",
+    border:
+      "1px solid #e5e7eb",
+    minWidth:
+      "300px",
+    width:
+      "300px",
+    flexShrink:
+      0,
+  },
+
+  documentRow: {
+    display:
+      "flex",
+    justifyContent:
+      "space-between",
+    alignItems:
+      "center",
+    gap:
+      "20px",
+    background:
+      "#f8fafc",
+    padding:
+      "15px",
+    borderRadius:
+      "14px",
+  },
+
+  documentButton: {
+    background:
+      "#0f7a34",
+    color:
+      "#ffffff",
+    padding:
+      "9px 14px",
+    borderRadius:
+      "10px",
+    textDecoration:
+      "none",
+    fontWeight:
+      600,
+  },
+};

@@ -14,7 +14,7 @@ public class VehicleChargeRequest {
     @NotNull
     private Double amount;
 
-    private String unit;
+    // private String unit;
 
-    private String description;
+    // private String description;
 }

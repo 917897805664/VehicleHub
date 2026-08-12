@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import OwnerSidebar from "./OwnerSidebar";
 import OwnerNavbar from "./OwnerNavbar";
 import AddVehicle from "./AddVehicle";
+import MyVehicle from "./MyVehicle";
+import MyVehicleDetails from "./MyVehicleDetails";
 import "./VehicleOwnerDashboard.css";
 
 const summaryCards = [
@@ -90,15 +92,6 @@ const bookingRequests = [
 
 
 
-const myVehicles = [
-  { name: "Hyundai i20", reg: "KA01AB1234", status: "Available", price: "₹1,499/day", image: "https://picsum.photos/seed/i20/300/200" },
-  { name: "Honda Activa 6G", reg: "KA02CD5678", status: "Available", price: "₹299/day", image: "https://picsum.photos/seed/activa/300/200" },
-  { name: "Tata Ace", reg: "KA03EF9012", status: "Booked", price: "₹2,999/day", image: "https://picsum.photos/seed/ace/300/200" },
-  { name: "Maruti Swift", reg: "KA04GH3456", status: "Maintenance", price: "₹1,299/day", image: "https://picsum.photos/seed/swift/300/200" },
-  { name: "Mahindra Thar", reg: "KA05IJ7890", status: "Available", price: "₹2,499/day", image: "https://picsum.photos/seed/thar/300/200" },
-];
-
-
 
 const notifications = [
   "New booking request for Hyundai i20",
@@ -110,24 +103,42 @@ const notifications = [
 
 
 
-export default function VehicleOwnerDashboard({ onLogout }) {
+export default function VehicleOwnerDashboard({ owner, onLogout }) {
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+  const ownerName = owner?.fullName || owner?.name || "Rahul Kumar";
+
+  const handleViewVehicleDetails = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setActiveSection("myVehicleDetails");
+  };
 
   return (
     <div className="owner-dashboard-shell">
       <OwnerSidebar active={activeSection} onSelect={setActiveSection} onLogout={onLogout} />
 
       <div className="owner-dashboard-panel">
-        <OwnerNavbar userName="Rahul Kumar" notificationCount={notifications.length} onAddVehicle={() => setActiveSection("addVehicle")} />
+        <OwnerNavbar userName={ownerName} notificationCount={notifications.length} onAddVehicle={() => setActiveSection("addVehicle")} />
 
         <div className="owner-dashboard-body">
           {activeSection === "addVehicle" ? (
-            <AddVehicle onBack={() => setActiveSection("dashboard")} />
+            <AddVehicle owner={owner} onBack={() => setActiveSection("dashboard")} />
+          ) : activeSection === "myVehicles" ? (
+            <MyVehicle owner={owner} onViewDetails={handleViewVehicleDetails} />
+          ) : activeSection === "myVehicleDetails" && selectedVehicle ? (
+            <MyVehicleDetails
+              vehicle={selectedVehicle}
+              onBack={() => {
+                setActiveSection("myVehicles");
+                setSelectedVehicle(null);
+              }}
+            />
           ) : (
             <>
               <div className="owner-dashboard-header">
                 <div>
-                  <h2 className="owner-dashboard-title">Welcome back, Rahul.</h2>
+                  <h2 className="owner-dashboard-title">Welcome back, {ownerName}.</h2>
                   <p className="owner-dashboard-subtitle">Manage vehicles, bookings, earnings, and customer requests from one place.</p>
                 </div>
                 <div className="owner-dashboard-header-badge">Owner</div>
@@ -208,24 +219,7 @@ export default function VehicleOwnerDashboard({ onLogout }) {
           </div>
 
           <div className="owner-bottom-grid">
-            <section className="panel-card my-vehicles-card">
-              <div className="panel-card-header">
-                <h3>My Vehicles</h3>
-                <button className="view-all-link">View Fleet</button>
-              </div>
-              <div className="vehicle-grid">
-                {myVehicles.map((vehicle) => (
-                  <div key={vehicle.name} className="vehicle-card">
-                    <img src={vehicle.image} alt={vehicle.name} className="vehicle-card-image" />
-                    <div className="vehicle-card-body">
-                      <div className="vehicle-card-title">{vehicle.name}</div>
-                      <div className="vehicle-card-meta">{vehicle.reg}</div>
-                      <div className="vehicle-card-detail">{vehicle.price} · {vehicle.status}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <MyVehicle owner={owner} onViewDetails={handleViewVehicleDetails} />
           </div>
         </>
           )}

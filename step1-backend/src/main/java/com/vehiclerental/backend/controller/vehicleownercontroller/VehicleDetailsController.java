@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.vehiclerental.backend.dto.ApiResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.AddVehicleRequest;
+import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleCatalogResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleChargeResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleDocumentResponse;
 import com.vehiclerental.backend.dto.vehicleownerdtolayer.VehicleIdResponse;
@@ -32,22 +34,72 @@ public class VehicleDetailsController {
 
     private final VehicleDetailsService vehicleDetailsService;
 
+
+    // =========================================================
+    // GET ALL VEHICLES
+    // CUSTOMER DASHBOARD / OWNER DASHBOARD
+    // =========================================================
+
+    @GetMapping("/catalog")
+    public ApiResponse<List<VehicleCatalogResponse>>
+    getAllVehicles(@RequestParam(required = false) Long ownerId) {
+
+        if (ownerId != null) {
+            return ApiResponse.success(
+                    "Owner vehicles retrieved successfully.",
+                    vehicleDetailsService.getVehicleCatalogByOwnerId(ownerId)
+            );
+        }
+
+        return ApiResponse.success(
+                "Vehicles retrieved successfully.",
+                vehicleDetailsService
+                        .getAllVehicleCatalog()
+        );
+    }
+
+
+    // =========================================================
+    // GET ONE VEHICLE
+    // VIEW VEHICLE DETAILS
+    // =========================================================
+
+    @GetMapping("/catalog/{vehicleId}")
+    public ApiResponse<VehicleCatalogResponse>
+    getVehicleById(
+            @PathVariable Long vehicleId
+    ) {
+
+        return ApiResponse.success(
+                "Vehicle details retrieved successfully.",
+                vehicleDetailsService
+                        .getVehicleCatalogById(
+                                vehicleId
+                        )
+        );
+    }
+
+
     // =========================================================
     // STEP 1
     // =========================================================
 
     @PostMapping("/addVehicle")
     public ApiResponse<VehicleIdResponse> addVehicle(
-            @Valid @RequestBody AddVehicleRequest request) {
+            @Valid @RequestBody AddVehicleRequest request
+    ) {
 
         VehicleIdResponse response =
-                vehicleDetailsService.addVehicle(request);
+                vehicleDetailsService.addVehicle(
+                        request
+                );
 
         return ApiResponse.success(
                 "vehicle details and features saved successfully.",
                 response
         );
     }
+
 
     // =========================================================
     // STEP 2
@@ -57,7 +109,8 @@ public class VehicleDetailsController {
             value = "/{vehicleId}/media",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ApiResponse<VehicleMediaResponse> uploadVehicleMedia(
+    public ApiResponse<VehicleMediaResponse>
+    uploadVehicleMedia(
 
             @PathVariable Long vehicleId,
 
@@ -85,6 +138,7 @@ public class VehicleDetailsController {
                 response
         );
     }
+
 
     // =========================================================
     // STEP 3
@@ -119,6 +173,7 @@ public class VehicleDetailsController {
                 response
         );
     }
+
 
     // =========================================================
     // STEP 4

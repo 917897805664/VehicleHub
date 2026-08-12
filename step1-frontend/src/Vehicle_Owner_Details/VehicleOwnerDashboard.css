@@ -675,6 +675,18 @@
   min-height: 220px;
 }
 
+.vehicle-view-details {
+  margin-top: 12px;
+  background: #0f766e;
+  color: #fff;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+}
+
 .vehicle-card-image {
   width: 100%;
   border-radius: 18px;

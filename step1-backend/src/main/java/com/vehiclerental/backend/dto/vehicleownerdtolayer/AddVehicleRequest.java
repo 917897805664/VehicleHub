@@ -13,6 +13,8 @@ public class AddVehicleRequest {
     // existing ID = update same vehicle
     private Long vehicleId;
 
+    private Long ownerId;
+
     @NotBlank
     private String vehicleName;
 

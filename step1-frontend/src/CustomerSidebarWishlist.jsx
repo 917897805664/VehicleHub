@@ -1,17 +1,26 @@
 import React from "react";
 import carImage from "./assets/car_image.jpg";
 
-export default function CustomerSidebarWishlist({ likedVehicles = [], onViewDetails, onToggleWishlist }) {
-  const wishlistItems = likedVehicles.length > 0
-    ? likedVehicles.map((vehicle) => ({
-        name: vehicle.name,
-        type: vehicle.type,
-        description: vehicle.description,
-        price: vehicle.price,
-        imageUrl: vehicle.imageUrl || carImage,
-        badge: vehicle.type === "Bike" ? "Popular" : vehicle.type === "Car" ? "Trending" : "Favorite",
-      }))
-    : [];
+export default function CustomerSidebarWishlist({ likedVehicles = [], onViewDetails, onToggleWishlist, onAddMore }) {
+  const getVehicleImage = (vehicle) => {
+    if (vehicle?.frontImage) {
+      return vehicle.frontImage;
+    }
+
+    if (Array.isArray(vehicle?.media)) {
+      const image = vehicle.media.find((media) =>
+        media?.contentType?.toLowerCase().startsWith("image/")
+      );
+
+      if (image?.fileData && image?.contentType) {
+        return `data:${image.contentType};base64,${image.fileData}`;
+      }
+    }
+
+    return carImage;
+  };
+
+  const wishlistItems = Array.isArray(likedVehicles) ? likedVehicles : [];
 
   return (
     <div style={styles.wrapper}>
@@ -32,7 +41,7 @@ export default function CustomerSidebarWishlist({ likedVehicles = [], onViewDeta
             <h3 style={styles.sectionTitle}>Your Wishlist</h3>
             <p style={styles.sectionText}>This section expands automatically as you add more vehicles.</p>
           </div>
-          <button type="button" style={styles.primaryButton}>
+          <button type="button" style={styles.primaryButton} onClick={onAddMore}>
             Add More
           </button>
         </div>
@@ -41,54 +50,53 @@ export default function CustomerSidebarWishlist({ likedVehicles = [], onViewDeta
           {wishlistItems.length === 0 ? (
             <div style={styles.emptyState}>No vehicles saved yet. Tap the heart on a vehicle card to add one.</div>
           ) : (
-            wishlistItems.map((item) => (
-              <div key={item.name} style={styles.itemCard}>
-                <div style={styles.itemTopBar}>
-                  <span style={styles.badge}>{item.badge}</span>
-                  <button
-                    type="button"
-                    style={styles.heartButton}
-                    aria-label="Remove from wishlist"
-                    onClick={() =>
-                      onToggleWishlist?.({
-                        name: item.name,
-                        type: item.type,
-                        description: item.description,
-                        price: item.price,
-                        imageUrl: item.imageUrl,
-                      })
-                    }
-                  >
-                    ♥
-                  </button>
-                </div>
+            wishlistItems.map((vehicle) => {
+              const vehicleName = vehicle?.vehicleName || vehicle?.name || "Vehicle";
+              const vehicleType = vehicle?.vehicleType || vehicle?.type || "Vehicle";
+              const price = vehicle?.hourlyRent ?? vehicle?.price ?? "Price not available";
+              const imageUrl = getVehicleImage(vehicle);
+              const badge = vehicleType === "Bike" ? "Popular" : vehicleType === "Car" ? "Trending" : "Favorite";
 
-                <div style={styles.imageWrap}>
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    onError={(event) => {
-                      event.target.onerror = null;
-                      event.target.src = carImage;
-                    }}
-                    style={styles.image}
-                  />
-                </div>
+              return (
+                <div key={vehicle?.id || vehicleName} style={styles.itemCard}>
+                  <div style={styles.itemTopBar}>
+                    <span style={styles.badge}>{badge}</span>
+                    <button
+                      type="button"
+                      style={styles.heartButton}
+                      aria-label="Remove from wishlist"
+                      onClick={() => onToggleWishlist?.(vehicle)}
+                    >
+                      ♥
+                    </button>
+                  </div>
 
-                <div style={styles.itemBody}>
-                  <h4 style={styles.itemTitle}>{item.name}</h4>
-                  <p style={styles.itemType}>{item.type}</p>
-                  <p style={styles.itemDescription}>{item.description}</p>
-                </div>
+                  <div style={styles.imageWrap}>
+                    <img
+                      src={imageUrl}
+                      alt={vehicleName}
+                      onError={(event) => {
+                        event.target.onerror = null;
+                        event.target.src = carImage;
+                      }}
+                      style={styles.image}
+                    />
+                  </div>
 
-                <div style={styles.itemFooter}>
-                  <span style={styles.price}>{item.price}</span>
-                  <button type="button" style={styles.viewButton} onClick={() => onViewDetails?.(item)}>
-                    View Details
-                  </button>
+                  <div style={styles.itemBody}>
+                    <h4 style={styles.itemTitle}>{vehicleName}</h4>
+                    <p style={styles.itemType}>{vehicleType}</p>
+                  </div>
+
+                  <div style={styles.itemFooter}>
+                    <span style={styles.price}>{typeof price === "number" ? `₹${price.toLocaleString("en-IN")}` : price}</span>
+                    <button type="button" style={styles.viewButton} onClick={() => onViewDetails?.(vehicle)}>
+                      View Details
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </section>

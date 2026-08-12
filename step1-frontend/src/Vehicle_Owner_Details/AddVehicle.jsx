@@ -297,7 +297,7 @@ const featureOptions = [
   "Disc Brake",
 ];
 
-export default function AddVehicle({ onBack }) {
+export default function AddVehicle({ owner, onBack }) {
   const [currentStep, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState({
@@ -584,6 +584,7 @@ export default function AddVehicle({ onBack }) {
         // null on first save -> INSERT
         // existing ID on re-save -> UPDATE same vehicle
         vehicleId: vehicleId || null,
+        ownerId: owner?.id || owner?.ownerId || null,
         vehicleName: formData.vehicleName,
         vehicleType: formData.type,
         brand: formData.brand,

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import carImage from "./assets/car_image.jpg";
 
 
-export default function BookingDetails({ onBack }) {
+export default function BookingDetails({ onBack, vehicle }) {
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [dropDate, setDropDate] = useState("");
@@ -13,6 +13,23 @@ export default function BookingDetails({ onBack }) {
   const [driverOption, setDriverOption] = useState("self");
   const [currentStep, setCurrentStep] = useState(1);
 
+  const getVehicleImage = () => {
+    if (vehicle?.frontImage) {
+      return vehicle.frontImage;
+    }
+
+    if (Array.isArray(vehicle?.media)) {
+      const image = vehicle.media.find((media) =>
+        media?.contentType?.toLowerCase().startsWith("image/")
+      );
+
+      if (image?.fileData && image?.contentType) {
+        return `data:${image.contentType};base64,${image.fileData}`;
+      }
+    }
+
+    return carImage;
+  };
 
   const bookingId = "RR1234567890";
   const paymentMethod = "Paid Successfully via Razorpay";
@@ -37,27 +54,27 @@ export default function BookingDetails({ onBack }) {
   };
 
   const selectedVehicle = {
-    name: "Hyundai i20",
-    details: "Petrol • Manual • 5 Seater",
+    name: vehicle?.vehicleName || vehicle?.name || "Hyundai i20",
+    details: `${vehicle?.fuelType || vehicle?.fuel || "Petrol"} • ${vehicle?.transmission || "Manual"} • ${vehicle?.seatingCapacity || vehicle?.seats || "5 Seater"}`,
     rating: "4.5",
     reviews: 126,
     distance: "1.2 km away",
-    priceHour: "₹149",
-    priceHourValue: 149,
-    priceDay: "₹1499",
-    priceDayValue: 1499,
-    priceWeek: "₹8999",
-    fuel: "Petrol",
-    transmission: "Manual",
-    seats: "5 Seater",
-    mileage: "18 km/l",
-    deposit: "₹5000",
-    DriverCharges: "₹500",
-    DriverChargesValue: 500,
-    DeliveryCharges: "₹300",
-    DeliveryChargesValue: 300,
-    SecurityDeposit: "₹5000",
-    SecurityDepositValue: 5000,
+    priceHour: vehicle?.hourlyRent ? `₹${Number(vehicle.hourlyRent).toLocaleString("en-IN")}` : "₹149",
+    priceHourValue: Number(vehicle?.hourlyRent ?? 149),
+    priceDay: vehicle?.dailyRent ? `₹${Number(vehicle.dailyRent).toLocaleString("en-IN")}` : "₹1499",
+    priceDayValue: Number(vehicle?.dailyRent ?? 1499),
+    priceWeek: vehicle?.weeklyRent ? `₹${Number(vehicle.weeklyRent).toLocaleString("en-IN")}` : "₹8999",
+    fuel: vehicle?.fuelType || vehicle?.fuel || "Petrol",
+    transmission: vehicle?.transmission || "Manual",
+    seats: vehicle?.seatingCapacity || vehicle?.seats || "5 Seater",
+    mileage: vehicle?.mileage ? `${vehicle.mileage} km/l` : "18 km/l",
+    deposit: vehicle?.securityDeposit ? `₹${Number(vehicle.securityDeposit).toLocaleString("en-IN")}` : "₹5000",
+    DriverCharges: vehicle?.driverCharges ? `₹${Number(vehicle.driverCharges).toLocaleString("en-IN")}` : "₹500",
+    DriverChargesValue: Number(vehicle?.driverCharges ?? 500),
+    DeliveryCharges: vehicle?.homeDeliveryCharges ? `₹${Number(vehicle.homeDeliveryCharges).toLocaleString("en-IN")}` : "₹300",
+    DeliveryChargesValue: Number(vehicle?.homeDeliveryCharges ?? 300),
+    SecurityDeposit: vehicle?.securityDeposit ? `₹${Number(vehicle.securityDeposit).toLocaleString("en-IN")}` : "₹5000",
+    SecurityDepositValue: Number(vehicle?.securityDeposit ?? 5000),
     Discount: "₹599.60",
     DiscountValue: 599.6,
   };
@@ -136,7 +153,10 @@ export default function BookingDetails({ onBack }) {
               {currentStep === 1 && (
                 <>
                   <div className="vehicle-preview-row">
-                    <img src={carImage} alt={selectedVehicle.name} />
+                    <img src={getVehicleImage()} alt={selectedVehicle.name} onError={(event) => {
+                      event.target.onerror = null;
+                      event.target.src = carImage;
+                    }} />
                     <div className="vehicle-preview-info">
                       <strong>{selectedVehicle.name}</strong>
                       <p>{selectedVehicle.details}</p>
@@ -411,7 +431,10 @@ export default function BookingDetails({ onBack }) {
                         </div>
                       </div>
                       <div className="confirmation-hero">
-                        <img src={carImage} alt="Booking confirmed" />
+                        <img src={getVehicleImage()} alt="Booking confirmed" onError={(event) => {
+                          event.target.onerror = null;
+                          event.target.src = carImage;
+                        }} />
                       </div>
                       <div className="confirmation-id-card">
                         <span>Booking ID:</span>

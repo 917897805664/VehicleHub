@@ -35,7 +35,7 @@ export default function Login({ role, onRoleChange, onRegisterClick, onForgotPas
       if (response.data && response.data.success) {
         setSuccess(response.data.message || "Login successful!");
         if (onLoginSuccess) {
-          onLoginSuccess(selectedRole);
+          onLoginSuccess(selectedRole, response.data.data);
         }
       } else {
         setError(response.data.message || "Login failed.");
