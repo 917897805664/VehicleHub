@@ -3190,6 +3190,7 @@ button {
   gap: 40px;
   align-items: start;
   margin-bottom: 30px;
+  margin-left: 15px;
 }
 
 .footer-brand-name {
@@ -3230,6 +3231,7 @@ button {
   flex-wrap: wrap;
   color: #9fb0c7;
   font-size: 0.95rem;
+   margin-left: 15px;
 }
 
 .footer-bottom a {

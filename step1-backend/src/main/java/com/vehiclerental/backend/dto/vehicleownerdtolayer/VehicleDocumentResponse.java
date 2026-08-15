@@ -11,4 +11,5 @@ public class VehicleDocumentResponse {
     private Long vehicleId;
 
     private int uploadedDocuments;
+    
 }

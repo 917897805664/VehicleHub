@@ -8,6 +8,9 @@ import busIcon from "./assets/bus_icon.jpg";
 import scooterIcon from "./assets/scooter_icon.jpg";
 import ViewVehicleDetails from "./ViewVehicleDetails";
 
+const API_BASE_URL = "http://localhost:8080/api/vehicle-owners/vehicles";
+
+
 export default function LandingPage({
   onLoginClick,
   onRegisterClick,
@@ -29,21 +32,21 @@ export default function LandingPage({
    
   ];
 
-  const popularVehicles = Array.from({ length: 16 }, (_, index) => ({
-    name: `Vehicle ${index + 1}`,
-    type: index % 2 === 0 ? "Car" : "SUV",
-    status: index % 3 === 0 ? "Available" : "Booked",
-    price: `₹${799 + index * 50}/day`,
-    image: carImage,
-  }));
+  // const popularVehicles = Array.from({ length: 16 }, (_, index) => ({
+  //   name: `Vehicle ${index + 1}`,
+  //   type: index % 2 === 0 ? "Car" : "SUV",
+  //   status: index % 3 === 0 ? "Available" : "Booked",
+  //   price: `₹${799 + index * 50}/day`,
+  //   image: carImage,
+  // }));
 
-  const recommendedVehicles = Array.from({ length: 28 }, (_, index) => ({
-    name: `Recommended ${index + 1}`,
-    type: index % 3 === 0 ? "Bike" : index % 3 === 1 ? "Car" : "SUV",
-    status: index % 2 === 0 ? "Available" : "Unavailable",
-    price: `₹${499 + index * 40}/day`,
-    image: carImage,
-  }));
+  // const recommendedVehicles = Array.from({ length: 28 }, (_, index) => ({
+  //   name: `Recommended ${index + 1}`,
+  //   type: index % 3 === 0 ? "Bike" : index % 3 === 1 ? "Car" : "SUV",
+  //   status: index % 2 === 0 ? "Available" : "Unavailable",
+  //   price: `₹${499 + index * 40}/day`,
+  //   image: carImage,
+  // }));
 
   const vehicleCategories = [
     "Two Wheelers",
@@ -87,6 +90,36 @@ export default function LandingPage({
   ];
 
   const [currentOffer, setCurrentOffer] = useState(0);
+
+  // =========================================================
+  // LOAD VEHICLES FROM DATABASE
+  // =========================================================
+
+  const [vehicles, setVehicles] = useState([]);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [vehicleError, setVehicleError] = useState("");
+
+  const loadVehicles = async () => {
+    try {
+      setLoadingVehicles(true);
+      setVehicleError("");
+      const response = await fetch(`${API_BASE_URL}/catalog`);
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      const result = await response.json();
+      if (result.success === false) throw new Error(result.message || "Unable to load vehicles.");
+      setVehicles(Array.isArray(result.data) ? result.data : []);
+    } catch (error) {
+      console.error("LandingPage vehicle load error:", error);
+      setVehicleError(error.message || "Unable to load vehicles.");
+      setVehicles([]);
+    } finally {
+      setLoadingVehicles(false);
+    }
+  };
+
+  useEffect(() => {
+    loadVehicles();
+  }, []);
 
   useEffect(() => {
     const autoplay = setInterval(() => {
@@ -210,6 +243,8 @@ export default function LandingPage({
             </div>
           </section>
 
+          {/* charts will appear below Today's Offers (keeps layout above offers unchanged) */}
+
           <section className="offers-row" id="offers">
             <div className="offers-panel full-width-offers">
               <div className="section-heading">
@@ -239,58 +274,37 @@ export default function LandingPage({
           <section className="vehicle-section" id="vehicles">
             <div className="vehicle-section-header">
               <div>
-                <h2>Popular Vehicles</h2>
-                <p>Explore our top vehicle picks for a smooth and safe ride.</p>
+                <h2>Available Vehicles</h2>
+                <p>Vehicles registered by vehicle owners.</p>
               </div>
             </div>
-            <div className="vehicle-card-grid">
-              {popularVehicles.map((vehicle) => (
-                <article key={vehicle.name} className="vehicle-card">
-                  <img className="vehicle-card-media" src={vehicle.image} alt={vehicle.name} />
-                  <div className="vehicle-card-meta">
-                    <h3>{vehicle.name}</h3>
-                    <p>{vehicle.type}</p>
-                    <p className={vehicle.status === "Available" ? "status-available" : "status-unavailable"}>{vehicle.status}</p>
-                    <p className="vehicle-price">{vehicle.price}</p>
-                  </div>
-                  <div className="vehicle-card-footer">
-                    <span></span>
-                    <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
-                      View Details
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
 
-          <section className="vehicle-section recommended-section">
-            <div className="vehicle-section-header">
-              <div>
-                <h2>Recommended for You</h2>
-                <p>Handpicked rides tailored to your search preferences.</p>
+            {loadingVehicles ? (
+              <div style={{ padding: 18 }}>Loading vehicles…</div>
+            ) : vehicleError ? (
+              <div style={{ padding: 18, color: "#b91c1c" }}>Error loading vehicles: {vehicleError}</div>
+            ) : (
+              <div className="vehicle-card-grid">
+                {vehicles.map((vehicle) => (
+                  <article key={vehicle.id} className="vehicle-card">
+                    <img className="vehicle-card-media" src={(vehicle.frontImage) || (Array.isArray(vehicle.media) && vehicle.media.find(m=>m.contentType&&m.contentType.startsWith("image/")&&m.fileData)? `data:${vehicle.media.find(m=>m.contentType&&m.contentType.startsWith("image/")).contentType};base64,${vehicle.media.find(m=>m.contentType&&m.contentType.startsWith("image/")).fileData}`: carImage)} alt={vehicle.vehicleName || vehicle.vehicleName} />
+                    <div className="vehicle-card-meta">
+                      <h3>{vehicle.vehicleName || vehicle.vehicleType || "Vehicle"}</h3>
+                      <p>{vehicle.vehicleType || "Vehicle"}</p>
+                      <p className={vehicle.status === "Available" ? "status-available" : "status-unavailable"}>{vehicle.status || (vehicle.available? "Available" : "Unavailable")}</p>
+                      <p className="vehicle-price">{vehicle.hourlyRent ? `Hourly: ₹${vehicle.hourlyRent}` : ""} {vehicle.dailyRent ? ` Daily: ₹${vehicle.dailyRent}` : ""}</p>
+                    </div>
+                    <div className="vehicle-card-footer">
+                      <span></span>
+                      <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
+                        View Details
+                      </button>
+                    </div>
+                  </article>
+                ))}
               </div>
-            </div>
-            <div className="vehicle-card-grid">
-              {recommendedVehicles.map((vehicle) => (
-                <article key={vehicle.name} className="vehicle-card">
-                  <img className="vehicle-card-media" src={vehicle.image} alt={vehicle.name} />
-                  <div className="vehicle-card-meta">
-                    <h3>{vehicle.name}</h3>
-                    <p>{vehicle.type}</p>
-                    <p className={vehicle.status === "Available" ? "status-available" : "status-unavailable"}>{vehicle.status}</p>
-                    <p className="vehicle-price">{vehicle.price}</p>
-                  </div>
-                  <div className="vehicle-card-footer">
-                    <span></span>
-                    <button type="button" className="view-details-button" onClick={() => onViewDetailsClick(vehicle)}>
-                      View Details
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section> 
+            )}
+          </section>
 
         </>
       )}

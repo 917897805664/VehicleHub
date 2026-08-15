@@ -11,4 +11,5 @@ public class VehicleMediaResponse {
     private Long vehicleId;
 
     private int uploadedFiles;
+    
 }

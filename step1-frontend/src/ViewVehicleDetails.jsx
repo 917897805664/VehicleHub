@@ -250,9 +250,10 @@ export default function ViewVehicleDetails({
   return (
     <div
       style={{
-        padding: "24px",
+        padding: "1px",
         background: "#f4f7fb",
         minHeight: "100vh",
+        // marginTop:"30px",
       }}
     >
 
@@ -267,7 +268,7 @@ export default function ViewVehicleDetails({
             "space-between",
           alignItems: "center",
           marginBottom: "24px",
-          marginTop: "40px"
+          marginTop: "60px"
         }}
       >
 
@@ -1272,11 +1273,11 @@ const styles = {
     background:
       "#ffffff",
     borderRadius:
-      "24px",
+      "0px",
     padding:
       "28px",
     marginBottom:
-      "24px",
+      "0px",
     boxShadow:
       "0 15px 35px rgba(15, 23, 42, 0.06)",
   },
