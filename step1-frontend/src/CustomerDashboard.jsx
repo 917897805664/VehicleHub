@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import ViewVehicleDetails from "./ViewVehicleDetails";
 import BookingDetails from "./BookingDetails";
 import CustomerProfile from "./CustomerProfile";
@@ -18,6 +19,8 @@ export default function CustomerDashboard({
   initialShowVehicleDetails = false,
   initialVehicle = null,
   onVehicleDetailsClosed,
+  customer = null,
+  onProfileClick,
 }) {
   const [active, setActive] = useState("dashboard");
 
@@ -32,6 +35,36 @@ export default function CustomerDashboard({
 
   const [showProfile, setShowProfile] =
     useState(false);
+
+  const [customerProfilePhoto, setCustomerProfilePhoto] =
+    useState(profilePlaceholder);
+
+  useEffect(() => {
+    if (!customer?.id) {
+      setCustomerProfilePhoto(profilePlaceholder);
+      return;
+    }
+
+    axios
+      .get(`http://localhost:8080/api/customer-profiles/${customer.id}`)
+      .then((response) => {
+        const photo = response.data?.data?.profilePhoto;
+
+        if (
+          photo &&
+          photo !== "DEFAULT_PROFILE_PHOTO" &&
+          photo.startsWith("data:image")
+        ) {
+          setCustomerProfilePhoto(photo);
+          return;
+        }
+
+        setCustomerProfilePhoto(profilePlaceholder);
+      })
+      .catch(() => {
+        setCustomerProfilePhoto(profilePlaceholder);
+      });
+  }, [customer?.id]);
 
   // =========================================================
   // DATABASE VEHICLES
@@ -269,6 +302,20 @@ export default function CustomerDashboard({
 
   const handleSidebarSelect = (key) => {
 
+    if (key === "profile") {
+      setActive("profile");
+      setShowProfile(true);
+      setShowInlineBooking(false);
+      setShowInlineDetails(false);
+      setInlineVehicle(null);
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "instant",
+      });
+      return;
+    }
+
     setActive(key);
 
     setShowInlineBooking(false);
@@ -277,9 +324,7 @@ export default function CustomerDashboard({
 
     setInlineVehicle(null);
 
-    setShowProfile(
-      key === "profile"
-    );
+    setShowProfile(false);
 
     window.scrollTo({
       top: 0,
@@ -624,6 +669,7 @@ export default function CustomerDashboard({
     return (
       <div
         key={vehicle.id}
+        className="animated-card vehicle-tile-card"
         style={styles.popularCard}
       >
 
@@ -905,7 +951,13 @@ export default function CustomerDashboard({
             paddingTop: "24px",
           }}
         >
-          <CustomerProfile />
+          <CustomerProfile
+            customerId={customer?.id}
+            onBack={() => {
+              setShowProfile(false);
+              setActive("dashboard");
+            }}
+          />
         </div>
       );
     }
@@ -1141,6 +1193,7 @@ export default function CustomerDashboard({
 
                 <div
                   key={item.label}
+                  className="animated-card dashboard-stat-card"
                   style={
                     styles.statCard
                   }
@@ -1478,7 +1531,7 @@ export default function CustomerDashboard({
 
   return (
     <div
-      className="booking-details-shell"
+      className="booking-details-shell dashboard-page-shell"
     >
 
       <Sidebar
@@ -1585,10 +1638,12 @@ export default function CustomerDashboard({
             >
 
               <img
-                src={
-                  profilePlaceholder
-                }
+                src={customerProfilePhoto}
                 alt="Customer profile"
+                onError={(event) => {
+                  event.target.onerror = null;
+                  event.target.src = profilePlaceholder;
+                }}
               />
 
             </button>

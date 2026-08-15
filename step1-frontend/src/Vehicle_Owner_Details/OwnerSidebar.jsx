@@ -13,7 +13,8 @@ const navItems = [
   { key: "reviews", label: "Reviews & Ratings", icon: "⭐" },
   { key: "notifications", label: "Notifications", icon: "🔔" },
   { key: "reports", label: "Reports & Analytics", icon: "📊" },
-  { key: "settings", label: "Profile & Settings", icon: "⚙️" },
+  { key: "Profile", label: "Profile", icon: "👤" },
+  { key: "settings", label: "Settings", icon: "⚙️" },
   { key: "help", label: "Help Center", icon: "❓" },
 ];
 
@@ -35,7 +36,13 @@ export default function OwnerSidebar({ active = "dashboard", onSelect = () => {}
             <button
               key={item.key}
               className={"owner-sidebar-item" + (item.key === active ? " active" : "")}
-              onClick={() => onSelect(item.key)}
+              onClick={() => {
+                if (item.key === "Profile") {
+                  onSelect("Profile");
+                  return;
+                }
+                onSelect(item.key);
+              }}
             >
               <span className="sidebar-item-icon">{item.icon}</span>
               {item.label}

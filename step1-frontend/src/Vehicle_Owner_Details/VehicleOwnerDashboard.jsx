@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import OwnerSidebar from "./OwnerSidebar";
 import OwnerNavbar from "./OwnerNavbar";
 import AddVehicle from "./AddVehicle";
 import MyVehicle from "./MyVehicle";
 import MyVehicleDetails from "./MyVehicleDetails";
+import VehicleOwnerProfile from "../VehicleOwnerProfile";
+import profilePlaceholder from "../assets/profile_icon.jpg";
 import "./VehicleOwnerDashboard.css";
 
 const summaryCards = [
@@ -106,23 +109,80 @@ const notifications = [
 export default function VehicleOwnerDashboard({ owner, onLogout }) {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [ownerProfilePhoto, setOwnerProfilePhoto] = useState(profilePlaceholder);
 
   const ownerName = owner?.fullName || owner?.name || "Rahul Kumar";
+
+  useEffect(() => {
+    if (!owner?.id) {
+      setOwnerProfilePhoto(profilePlaceholder);
+      return;
+    }
+
+    axios
+      .get(`http://localhost:8080/api/vehicle-owner-profiles/${owner.id}`)
+      .then((response) => {
+        const photo = response.data?.data?.profilePhoto;
+
+        if (photo && photo !== "DEFAULT_PROFILE_PHOTO" && photo.startsWith("data:image")) {
+          setOwnerProfilePhoto(photo);
+          return;
+        }
+
+        setOwnerProfilePhoto(profilePlaceholder);
+      })
+      .catch(() => {
+        setOwnerProfilePhoto(profilePlaceholder);
+      });
+  }, [owner?.id]);
 
   const handleViewVehicleDetails = (vehicle) => {
     setSelectedVehicle(vehicle);
     setActiveSection("myVehicleDetails");
   };
 
+  const handleOpenOwnerProfile = () => {
+    setShowProfile(true);
+    setActiveSection("profile");
+  };
+
+  const handleCloseOwnerProfile = () => {
+    setShowProfile(false);
+    setActiveSection("dashboard");
+  };
+
   return (
     <div className="owner-dashboard-shell">
-      <OwnerSidebar active={activeSection} onSelect={setActiveSection} onLogout={onLogout} />
+      <OwnerSidebar
+        active={activeSection}
+        onSelect={(section) => {
+          if (section === "Profile") {
+            handleOpenOwnerProfile();
+            return;
+          }
+          setActiveSection(section);
+          setShowProfile(false);
+        }}
+        onLogout={onLogout}
+      />
 
       <div className="owner-dashboard-panel">
-        <OwnerNavbar userName={ownerName} notificationCount={notifications.length} onAddVehicle={() => setActiveSection("addVehicle")} />
+        <OwnerNavbar
+          userName={ownerName}
+          notificationCount={notifications.length}
+          onAddVehicle={() => {
+            setActiveSection("addVehicle");
+            setShowProfile(false);
+          }}
+          onProfileClick={handleOpenOwnerProfile}
+          profileImage={ownerProfilePhoto}
+        />
 
         <div className="owner-dashboard-body">
-          {activeSection === "addVehicle" ? (
+          {showProfile ? (
+            <VehicleOwnerProfile ownerId={owner?.id} onBack={handleCloseOwnerProfile} />
+          ) : activeSection === "addVehicle" ? (
             <AddVehicle owner={owner} onBack={() => setActiveSection("dashboard")} />
           ) : activeSection === "myVehicles" ? (
             <MyVehicle owner={owner} onViewDetails={handleViewVehicleDetails} />

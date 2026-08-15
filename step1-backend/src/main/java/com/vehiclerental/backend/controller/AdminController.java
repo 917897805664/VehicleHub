@@ -1,16 +1,12 @@
+
 package com.vehiclerental.backend.controller;
 
 import com.vehiclerental.backend.dto.ApiResponse;
 import com.vehiclerental.backend.dto.LoginRequest;
-
 import com.vehiclerental.backend.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admins")
@@ -21,8 +17,15 @@ public class AdminController {
     private final AdminService adminService;
 
     @PostMapping("/login")
-    public ApiResponse<Object> login(@Valid @RequestBody LoginRequest request) {
-        Object loggedInUser = adminService.login(request);
-        return ApiResponse.success("Login successful!", loggedInUser);
+    public ApiResponse<Object> login(
+            @Valid @RequestBody LoginRequest request) {
+
+        Object loggedInUser =
+                adminService.login(request);
+
+        return ApiResponse.success(
+                "Login successful!",
+                loggedInUser
+        );
     }
 }

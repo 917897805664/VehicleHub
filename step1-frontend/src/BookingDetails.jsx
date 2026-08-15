@@ -199,11 +199,11 @@ export default function BookingDetails({ onBack, vehicle }) {
           margin-bottom: 24px;
           flex-wrap: wrap;
           position: fixed;
-          top: 0;
+          top: 70px;
           left: 260px;
           right: 0;
           padding: 18px 36px;
-          background: #f4f7fb;
+          background: #ffffff;
           z-index: 50;
           width: calc(100% - 260px);
           box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
@@ -257,7 +257,7 @@ export default function BookingDetails({ onBack, vehicle }) {
           gap: 12px;
           margin-bottom: 28px;
           position: fixed;
-          top: 110px;
+          top: 175px;
           left: 260px;
           right: 0;
           margin: 0;
@@ -306,7 +306,7 @@ export default function BookingDetails({ onBack, vehicle }) {
           grid-template-columns: 1fr;
           gap: 20px;
           margin-bottom: 24px;
-          padding-top: 100px;
+          padding-top: 150px;
         }
 
         .booking-card {
@@ -332,6 +332,7 @@ export default function BookingDetails({ onBack, vehicle }) {
           padding: 16px 0 8px;
           border-bottom: 1px solid rgba(16, 42, 67, 0.08);
           margin-bottom: 18px;
+          
         }
 
         .vehicle-preview-row img {

@@ -2,13 +2,29 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const ROLE_CONFIG = {
-  customer: { apiUrl: "http://localhost:8080/api/customers/register", heading: "Create your Customer account" },
-  vehicleOwner: { apiUrl: "http://localhost:8080/api/vehicle-owners/register", heading: "Create your VehicleOwner account" },
-  admin: { apiUrl: "http://localhost:8080/api/admins/register", heading: "Create your Admin account" },
+  customer: {
+    apiUrl: "http://localhost:8080/api/customers/register",
+    heading: "Create your Customer account",
+  },
+
+  vehicleOwner: {
+    apiUrl: "http://localhost:8080/api/vehicle-owners/register",
+    heading: "Create your VehicleOwner account",
+  },
 };
 
-export default function Register({ role, onRoleChange, onLoginClick, onLandingClick }) {
-  const registerRole = role === "admin" ? "customer" : (role || "customer");
+export default function Register({
+  role,
+  onRoleChange,
+  onLoginClick,
+  onLandingClick,
+  onRegistrationSuccess,
+}) {
+
+  const registerRole =
+    role === "admin"
+      ? "customer"
+      : role || "customer";
 
   const [form, setForm] = useState({
     fullName: "",
@@ -18,33 +34,58 @@ export default function Register({ role, onRoleChange, onLoginClick, onLandingCl
     confirmPassword: "",
   });
 
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [agreeTerms, setAgreeTerms] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
+
     setError("");
     setMessage("");
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
+    if (
+      form.password !==
+      form.confirmPassword
+    ) {
+
+      setError(
+        "Passwords do not match."
+      );
+
       return;
     }
 
     if (!agreeTerms) {
-      setError("Please agree to the Terms and Conditions and Privacy Policy.");
+
+      setError(
+        "Please agree to the Terms and Conditions and Privacy Policy."
+      );
+
       return;
     }
 
     setLoading(true);
 
     try {
+
       const payload = {
         fullName: form.fullName,
         email: form.email,
@@ -52,66 +93,123 @@ export default function Register({ role, onRoleChange, onLoginClick, onLandingCl
         password: form.password,
       };
 
-      const response = await axios.post(ROLE_CONFIG[registerRole].apiUrl, payload);
-      setMessage(response.data.message || "Registration successful!");
+      const response = await axios.post(
+        ROLE_CONFIG[registerRole].apiUrl,
+        payload
+      );
 
-      setForm({
-        fullName: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirmPassword: "",
-      });
-      setAgreeTerms(false);
+      if (response.data?.success) {
 
-      if (onLoginClick) {
-        onLoginClick();
-      }
-    } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
+        setMessage(
+          "Registration successful. Redirecting to profile..."
+        );
+
+        const registeredUser =
+          response.data.data;
+
+        setForm({
+          fullName: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        });
+
+        setAgreeTerms(false);
+
+        setTimeout(() => {
+
+          if (onRegistrationSuccess) {
+
+            onRegistrationSuccess(
+              registerRole,
+              registeredUser
+            );
+
+          }
+
+        }, 700);
+
       } else {
-        setError("Could not reach the server. Is the backend running on port 8080?");
+
+        setError(
+          response.data?.message ||
+          "Registration failed."
+        );
       }
+
+    } catch (err) {
+
+      setError(
+        err.response?.data?.message ||
+        "Could not reach the server. Is the backend running on port 8080?"
+      );
+
     } finally {
+
       setLoading(false);
-    }
-  };
-
-  const handleLoginClick = () => {
-    if (onLoginClick) {
-      onLoginClick();
-    }
-  };
-
-  const handleLandingClick = () => {
-    if (onLandingClick) {
-      onLandingClick();
     }
   };
 
   return (
     <div style={styles.wrapper}>
-      <form style={styles.card} onSubmit={handleSubmit}>
+
+      <form
+        style={styles.card}
+        onSubmit={handleSubmit}
+      >
+
         <div style={styles.header}>
-          <h2 style={styles.heading}>{ROLE_CONFIG[registerRole].heading}</h2>
-          <p style={styles.subText}>Join us and start renting vehicles</p>
+
+          <h2 style={styles.heading}>
+            {ROLE_CONFIG[registerRole].heading}
+          </h2>
+
+          <p style={styles.subText}>
+            Join us and start renting vehicles
+          </p>
+
         </div>
 
-        <label style={styles.label}>Register As</label>
+        <label style={styles.label}>
+          Register As
+        </label>
+
         <select
           style={styles.input}
           value={registerRole}
-          onChange={(e) => onRoleChange && onRoleChange(e.target.value)}
+          onChange={(e) =>
+            onRoleChange &&
+            onRoleChange(e.target.value)
+          }
         >
-          <option value="customer">Customer</option>
-          <option value="vehicleOwner">VehicleOwner</option>     
+
+          <option value="customer">
+            Customer
+          </option>
+
+          <option value="vehicleOwner">
+            VehicleOwner
+          </option>
+
         </select>
 
-        {error && <div style={styles.error}>{error}</div>}
-        {message && <div style={styles.success}>{message}</div>}
+        {error && (
+          <div style={styles.error}>
+            {error}
+          </div>
+        )}
 
-        <label style={styles.label}>Full Name</label>
+        {message && (
+          <div style={styles.success}>
+            {message}
+          </div>
+        )}
+
+        <label style={styles.label}>
+          Full Name
+        </label>
+
         <input
           style={styles.input}
           name="fullName"
@@ -121,7 +219,10 @@ export default function Register({ role, onRoleChange, onLoginClick, onLandingCl
           required
         />
 
-        <label style={styles.label}>Email</label>
+        <label style={styles.label}>
+          Email
+        </label>
+
         <input
           style={styles.input}
           type="email"
@@ -132,7 +233,10 @@ export default function Register({ role, onRoleChange, onLoginClick, onLandingCl
           required
         />
 
-        <label style={styles.label}>Phone Number</label>
+        <label style={styles.label}>
+          Phone Number
+        </label>
+
         <input
           style={styles.input}
           name="phone"
@@ -142,7 +246,10 @@ export default function Register({ role, onRoleChange, onLoginClick, onLandingCl
           required
         />
 
-        <label style={styles.label}>Password</label>
+        <label style={styles.label}>
+          Password
+        </label>
+
         <input
           style={styles.input}
           type="password"
@@ -153,7 +260,10 @@ export default function Register({ role, onRoleChange, onLoginClick, onLandingCl
           required
         />
 
-        <label style={styles.label}>Confirm Password</label>
+        <label style={styles.label}>
+          Confirm Password
+        </label>
+
         <input
           style={styles.input}
           type="password"
@@ -165,35 +275,64 @@ export default function Register({ role, onRoleChange, onLoginClick, onLandingCl
         />
 
         <label style={styles.checkboxRow}>
+
           <input
             type="checkbox"
             checked={agreeTerms}
-            onChange={(e) => setAgreeTerms(e.target.checked)}
+            onChange={(e) =>
+              setAgreeTerms(e.target.checked)
+            }
           />
+
           <span style={styles.checkboxText}>
-            I agree to the Terms and Conditions and Privacy Policy.
+            I agree to the Terms and Conditions
+            and Privacy Policy.
           </span>
+
         </label>
 
         <div style={styles.buttonRow}>
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? "Registering..." : "Register"}
+
+          <button
+            style={styles.button}
+            type="submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Registering..."
+              : "Register"}
           </button>
+
         </div>
 
         <p style={styles.loginText}>
+
           Already have an account?{" "}
-          <button type="button" style={styles.loginLink} onClick={handleLoginClick}>
+
+          <button
+            type="button"
+            style={styles.loginLink}
+            onClick={onLoginClick}
+          >
             Login
           </button>
+
         </p>
 
         <p style={styles.loginText}>
-          <button type="button" style={styles.loginLink} onClick={handleLandingClick}>
+
+          <button
+            type="button"
+            style={styles.loginLink}
+            onClick={onLandingClick}
+          >
             Go to Landing Page
           </button>
+
         </p>
+
       </form>
+
     </div>
   );
 }
@@ -204,6 +343,7 @@ const styles = {
     justifyContent: "center",
     paddingTop: "60px",
   },
+
   card: {
     background: "#fff",
     padding: "32px",
@@ -215,27 +355,37 @@ const styles = {
     flexDirection: "column",
     gap: "6px",
   },
+
   header: {
     textAlign: "center",
     marginBottom: "8px",
   },
+
   heading: {
     margin: "0 0 4px",
     fontSize: "24px",
     color: "#1b1f3b",
   },
+
   subText: {
     margin: 0,
     fontSize: "14px",
     color: "#666",
   },
-  label: { fontSize: "13px", color: "#555", marginTop: "8px" },
+
+  label: {
+    fontSize: "13px",
+    color: "#555",
+    marginTop: "8px",
+  },
+
   input: {
     padding: "10px",
     borderRadius: "6px",
     border: "1px solid #ccc",
     fontSize: "15px",
   },
+
   checkboxRow: {
     display: "flex",
     alignItems: "center",
@@ -244,14 +394,17 @@ const styles = {
     fontSize: "13px",
     color: "#555",
   },
+
   checkboxText: {
     lineHeight: 1.4,
   },
+
   buttonRow: {
     display: "flex",
     justifyContent: "center",
     marginTop: "16px",
   },
+
   button: {
     width: "100%",
     padding: "12px",
@@ -262,12 +415,14 @@ const styles = {
     fontWeight: "bold",
     cursor: "pointer",
   },
+
   loginText: {
     textAlign: "center",
     marginTop: "10px",
     fontSize: "14px",
     color: "#555",
   },
+
   loginLink: {
     background: "none",
     border: "none",
@@ -278,6 +433,7 @@ const styles = {
     cursor: "pointer",
     fontSize: "14px",
   },
+
   error: {
     background: "#ffe5e5",
     color: "#c0392b",
@@ -285,6 +441,7 @@ const styles = {
     borderRadius: "6px",
     fontSize: "14px",
   },
+
   success: {
     background: "#e5ffe9",
     color: "#1a7a34",

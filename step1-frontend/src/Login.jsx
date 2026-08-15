@@ -2,7 +2,15 @@ import React, { useState } from "react";
 import axios from "axios";
 import { getLoginConfig } from "./loginConfig";
 
-export default function Login({ role, onRoleChange, onRegisterClick, onForgotPasswordClick, onLandingClick, onLoginSuccess }) {
+export default function Login({
+  role,
+  onRoleChange,
+  onRegisterClick,
+  onForgotPasswordClick,
+  onLandingClick,
+  onLoginSuccess,
+}) {
+
   const [form, setForm] = useState({
     identifier: "",
     password: "",
@@ -14,84 +22,150 @@ export default function Login({ role, onRoleChange, onRegisterClick, onForgotPas
   const [rememberMe, setRememberMe] = useState(false);
 
   const selectedRole = role || "customer";
-  const loginConfig = getLoginConfig(selectedRole);
+
+  const loginConfig =
+    getLoginConfig(selectedRole);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
+
     setError("");
     setSuccess("");
     setLoading(true);
 
     try {
-      const response = await axios.post(loginConfig.apiUrl, {
-        identifier: form.identifier,
-        password: form.password,
-      });
 
-      if (response.data && response.data.success) {
-        setSuccess(response.data.message || "Login successful!");
-        if (onLoginSuccess) {
-          onLoginSuccess(selectedRole, response.data.data);
+      const response = await axios.post(
+        loginConfig.apiUrl,
+        {
+          identifier: form.identifier,
+          password: form.password,
         }
+      );
+
+      if (
+        response.data &&
+        response.data.success
+      ) {
+
+        setSuccess(
+          response.data.message ||
+          "Login successful!"
+        );
+
+        if (onLoginSuccess) {
+
+          onLoginSuccess(
+            selectedRole,
+            response.data.data
+          );
+        }
+
       } else {
-        setError(response.data.message || "Login failed.");
+
+        setError(
+          response.data.message ||
+          "Login failed."
+        );
       }
+
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
+
+      if (
+        err.response &&
+        err.response.data &&
+        err.response.data.message
+      ) {
+
+        setError(
+          err.response.data.message
+        );
+
       } else {
-        setError("Could not reach the server. Is the backend running on port 8080?");
+
+        setError(
+          "Could not reach the server. Is the backend running on port 8080?"
+        );
       }
+
     } finally {
+
       setLoading(false);
-    }
-  };
-
-  const handleRegisterClick = () => {
-    if (onRegisterClick) {
-      onRegisterClick();
-    }
-  };
-
-  const handleForgotPasswordClick = () => {
-    if (onForgotPasswordClick) {
-      onForgotPasswordClick();
-    }
-  };
-
-  const handleLandingClick = () => {
-    if (onLandingClick) {
-      onLandingClick();
     }
   };
 
   return (
     <div style={styles.wrapper}>
-      <form style={styles.card} onSubmit={handleSubmit}>
+
+      <form
+        style={styles.card}
+        onSubmit={handleSubmit}
+      >
+
         <div style={styles.header}>
-          <h2 style={styles.heading}>Welcome Back!</h2>
-          <p style={styles.subText}>{loginConfig.heading}</p>
+
+          <h2 style={styles.heading}>
+            Welcome Back!
+          </h2>
+
+          <p style={styles.subText}>
+            {loginConfig.heading}
+          </p>
+
         </div>
 
-        <label style={styles.label}>Login As</label>
+        <label style={styles.label}>
+          Login As
+        </label>
+
         <select
           style={styles.input}
           value={selectedRole}
-          onChange={(e) => onRoleChange && onRoleChange(e.target.value)}
+          onChange={(e) =>
+            onRoleChange &&
+            onRoleChange(e.target.value)
+          }
         >
-          <option value="customer">Customer</option>
-          <option value="vehicleOwner">Vehicle Owner</option>
-          <option value="admin">Admin</option>
+
+          <option value="customer">
+            Customer
+          </option>
+
+          <option value="vehicleOwner">
+            Vehicle Owner
+          </option>
+
+          <option value="admin">
+            Admin
+          </option>
+
         </select>
 
-        {error && <div style={styles.error}>{error}</div>}
-        {success && <div style={styles.success}>{success}</div>}
+        {error && (
+          <div style={styles.error}>
+            {error}
+          </div>
+        )}
 
-        <label style={styles.label}>Email or Mobile Number</label>
+        {success && (
+          <div style={styles.success}>
+            {success}
+          </div>
+        )}
+
+        <label style={styles.label}>
+          Email or Mobile Number
+        </label>
+
         <input
           style={styles.input}
           type="text"
@@ -102,7 +176,10 @@ export default function Login({ role, onRoleChange, onRegisterClick, onForgotPas
           required
         />
 
-        <label style={styles.label}>Password</label>
+        <label style={styles.label}>
+          Password
+        </label>
+
         <input
           style={styles.input}
           type="password"
@@ -114,43 +191,85 @@ export default function Login({ role, onRoleChange, onRegisterClick, onForgotPas
         />
 
         <div style={styles.optionsRow}>
+
           <label style={styles.checkboxRow}>
+
             <input
               type="checkbox"
               checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
+              onChange={(e) =>
+                setRememberMe(e.target.checked)
+              }
             />
-            <span style={styles.checkboxText}>Remember Me</span>
+
+            <span style={styles.checkboxText}>
+              Remember Me
+            </span>
+
           </label>
 
-          <button type="button" style={styles.linkButton} onClick={handleForgotPasswordClick}>
+          <button
+            type="button"
+            style={styles.linkButton}
+            onClick={onForgotPasswordClick}
+          >
             Forgot Password?
           </button>
+
         </div>
 
         <div style={styles.buttonRow}>
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+
+          <button
+            style={styles.button}
+            type="submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Logging in..."
+              : "Login"}
           </button>
+
         </div>
 
         {selectedRole !== "admin" ? (
+
           <p style={styles.registerText}>
+
             Don't have an account?{" "}
-            <button type="button" style={styles.linkButton} onClick={handleRegisterClick}>
+
+            <button
+              type="button"
+              style={styles.linkButton}
+              onClick={onRegisterClick}
+            >
               Register
             </button>
+
           </p>
+
         ) : (
-          <p style={styles.registerText}>Admin accounts can only be accessed through login.</p>
+
+          <p style={styles.registerText}>
+            Admin accounts can only be accessed through login.
+          </p>
+
         )}
 
         <p style={styles.registerText}>
-          <button type="button" style={styles.linkButton} onClick={handleLandingClick}>
+
+          <button
+            type="button"
+            style={styles.linkButton}
+            onClick={onLandingClick}
+          >
             Go to Landing Page
           </button>
+
         </p>
+
       </form>
+
     </div>
   );
 }
@@ -161,6 +280,7 @@ const styles = {
     justifyContent: "center",
     paddingTop: "60px",
   },
+
   card: {
     background: "#fff",
     padding: "32px",
@@ -172,27 +292,37 @@ const styles = {
     flexDirection: "column",
     gap: "8px",
   },
+
   header: {
     textAlign: "center",
     marginBottom: "8px",
   },
+
   heading: {
     margin: "0 0 4px",
     fontSize: "24px",
     color: "#1b1f3b",
   },
+
   subText: {
     margin: 0,
     fontSize: "14px",
     color: "#666",
   },
-  label: { fontSize: "13px", color: "#555", marginTop: "8px" },
+
+  label: {
+    fontSize: "13px",
+    color: "#555",
+    marginTop: "8px",
+  },
+
   input: {
     padding: "10px",
     borderRadius: "6px",
     border: "1px solid #ccc",
     fontSize: "15px",
   },
+
   optionsRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -200,6 +330,7 @@ const styles = {
     marginTop: "8px",
     gap: "8px",
   },
+
   checkboxRow: {
     display: "flex",
     alignItems: "center",
@@ -207,9 +338,11 @@ const styles = {
     fontSize: "13px",
     color: "#555",
   },
+
   checkboxText: {
     lineHeight: 1.4,
   },
+
   linkButton: {
     background: "none",
     border: "none",
@@ -220,11 +353,13 @@ const styles = {
     cursor: "pointer",
     fontSize: "13px",
   },
+
   buttonRow: {
     display: "flex",
     justifyContent: "center",
     marginTop: "16px",
   },
+
   button: {
     width: "100%",
     padding: "12px",
@@ -235,12 +370,14 @@ const styles = {
     fontWeight: "bold",
     cursor: "pointer",
   },
+
   registerText: {
     textAlign: "center",
     marginTop: "10px",
     fontSize: "14px",
     color: "#555",
   },
+
   error: {
     background: "#ffe5e5",
     color: "#c0392b",
@@ -248,6 +385,7 @@ const styles = {
     borderRadius: "6px",
     fontSize: "14px",
   },
+
   success: {
     background: "#e5ffe9",
     color: "#1a7a34",
